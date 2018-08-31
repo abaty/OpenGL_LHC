@@ -1,7 +1,7 @@
 #include "include/Camera.h"
 
 Camera::Camera() 
-	:fieldOfView(45.0f), aspectRatio(4.0f/3.0f), nearVisionLimit(0.01f), farVisionLimit(50.0f)
+	:fieldOfView(45.0f), aspectRatio(4.0f/3.0f), nearVisionLimit(0.01f), farVisionLimit(100.0f)
 {
 	//no transformation (camera at origin)
 	position = glm::vec3(0, 0, 0.01);
@@ -11,7 +11,7 @@ Camera::Camera()
 }
 
 Camera::Camera(glm::vec3 _position) 
-	:fieldOfView(45.0f), aspectRatio(4.0f/ 3.0f), nearVisionLimit(0.01f), farVisionLimit(50.0f)
+	:fieldOfView(45.0f), aspectRatio(4.0f/ 3.0f), nearVisionLimit(0.01f), farVisionLimit(100.0f)
 {
 	position = _position;
 	centerOfWorld = glm::vec3(0, 0, 0);
@@ -41,7 +41,7 @@ void Camera::frontView() {
 }
 
 void Camera::topView() {
-	setPosition(glm::vec3(0.0f, 10.0f, 0.0f));
+	setPosition(glm::vec3(0.01f, 10.0f, 0.0f));
 	setCenterOfWorld(glm::vec3(0.0f, 0.0f, 0.0f));
 	viewMatrix = glm::lookAt(position, centerOfWorld, glm::vec3(0, 1, 0));
 }

@@ -59,6 +59,17 @@ void Renderer::Draw(const VertexArray& va, const IndexBuffer& ib, const Shader& 
 	GLCall(glDrawElements(mode, count, GL_UNSIGNED_INT, nullptr));
 }
 
+void Renderer::Draw(const VertexArray& va, const IndexBuffer& ib, const Shader& shader, GLenum mode, unsigned int count, unsigned int offset) const {
+	shader.Bind();
+	va.Bind();
+	ib.Bind();
+	if (count+offset > ib.GetCount()) {
+		std::cout << "Renderer::Draw was given a custom count+offset that is larger than the bound index buffer!  Setting it to the size of the index buffer!" << std::endl;
+		count = ib.GetCount();
+	}
+	GLCall(glDrawElements(mode, count, GL_UNSIGNED_INT, (void*) (offset * sizeof(unsigned int))));
+}
+
 void Renderer::Clear() const {
 	GLCall(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 }
