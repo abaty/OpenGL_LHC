@@ -4,6 +4,9 @@
 Beam::Beam(std::string collider, float _secondsToNSConversion)
 	:secondToNSConversion(_secondsToNSConversion)
 {
+	mutex_pileup = new std::mutex();
+	mutex_bunchLength = new std::mutex();
+
 	beamlineBufferLayout.Push<float>(3);
 	beamlineBufferLayout.Push<float>(1);
 
@@ -17,6 +20,8 @@ Beam::Beam(bool _isFixedTarget, int _nPipes, float _bunchSpacing, float _bunchLe
 	: isFixedTarget(_isFixedTarget), nPipes(_nPipes), bunchSpacing(_bunchSpacing), bunchLength(_bunchLength), 
 	secondToNSConversion(_secondsToNSConversion), beam1(_beam1), energy1(_energy1), beam2(_beam2), energy2(_energy2)
 {
+	mutex_pileup = new std::mutex();
+
 	beamlineBufferLayout.Push<float>(3);
 	beamlineBufferLayout.Push<float>(1);
 
@@ -26,6 +31,13 @@ Beam::Beam(bool _isFixedTarget, int _nPipes, float _bunchSpacing, float _bunchLe
 }
 
 Beam::~Beam() {
+	delete mutex_pileup;
+}
+
+void Beam::SetPileup(float _pileup) {
+	mutex_pileup->lock();
+	pileup = _pileup;
+	mutex_pileup->unlock();
 }
 
 void Beam::SetToLHC(float _bunchSpacing, float _bunchLength, float CoMEnergy) {

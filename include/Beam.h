@@ -5,6 +5,7 @@
 #include "include/IndexBuffer.h"
 #include <iostream>
 #include <string>
+#include <mutex>
 
 enum beamType {
 	NOTHING,
@@ -48,9 +49,9 @@ public:
 
 	inline void SetBunchSpacing(float _bunchSpacing) { bunchSpacing = _bunchSpacing;  }
 	inline void SetBunchLength(float _bunchLength) { bunchLength = _bunchLength; }
-	inline void SetPileup(float _pileup) { pileup = _pileup; }
 	inline void SetEnergy1(float e) { energy1 = e; }
 	inline void SetEnergy2(float e) { energy2 = e; }
+	void SetPileup(float _pileup);//mutexed
 
 	inline void SetNPipes(int n) { nPipes = n; UpdateBeams(); }
 	inline void SetIsFixedTarget(bool is) { isFixedTarget = is; UpdateBeams(); }
@@ -69,6 +70,8 @@ public:
 	VertexArray*  beamlineVertexArray;
 	VertexBuffer* beamlineVertexBuffer;
 
+	std::mutex * mutex_pileup;
+	std::mutex * mutex_bunchLength;
 
 private:
 
@@ -97,5 +100,4 @@ private:
 	unsigned int beamlineIndices[2* nPointsAlongBeam];
 
 	void UpdateBeams();
-
 };

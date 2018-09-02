@@ -15,7 +15,7 @@
 #include "include/shader.h"
 
 #include "include/Camera.h"
-#include "include/Event.h"
+#include "include/MyEvent.h"
 #include "include/Beam.h"
 
 
@@ -32,8 +32,7 @@ extern "C" {
 int main(void)
 {
 	/* Initialize the library */
-	if (!glfwInit())
-		return -1;
+	if (!glfwInit()) return -1;
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -49,6 +48,7 @@ int main(void)
 	glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
 	glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
 	glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
+	glfwWindowHint(GLFW_SAMPLES, 4);//multisampling for anti-aliasing
 	//GLFWwindow* window = glfwCreateWindow(mode->width, mode->height, "LHCSim", primaryMonitor, NULL);
 	GLFWwindow* window = glfwCreateWindow(aspectRatioX, aspectRatioY, "LHCSim", NULL, NULL);
 	if (!window)
@@ -67,10 +67,13 @@ int main(void)
 	std::cout << glGetString(GL_RENDERER) << std::endl;
 	std::cout << glGetString(GL_VERSION) << std::endl;
 
+	//turn on anti-aliasing
+	glEnable(GL_MULTISAMPLE);
+
 	float positions[12] = { -1.1f, 0.1f, 1.1f, 1.1f, 0.0f, 1.1f, 1.1f, 0.0f, -1.1f, -1.1f, 0.0f, -1.1f};
 	unsigned int indices[6] = { 0, 1, 2, 2, 3, 0 };
 
-	Camera camera = Camera( glm::vec3(0.0f, 5.0f, 10.0f) );
+	Camera camera = Camera(glm::vec3(0.0f, 5.0f, 10.0f));
 	camera.setAspectRatio((float)mode->width/(float)mode->height);
 
 	VertexArray va;
@@ -88,7 +91,11 @@ int main(void)
 
 	float secondToNSConversion = 1.0;//can think of this as an overall scale factor
 	Beam beam = Beam("LHC", secondToNSConversion);
-	Event event = Event(glfwGetTime(), 0.76, 0.96, &beam);
+	beam.SetPileup(5);
+	MCGenerator mcGen = MCGenerator(generatorType::PYTHIA8);
+	MyEvent event = MyEvent(glfwGetTime(), 0.76, 0.96, &beam, &mcGen);
+	event.EnablePtCut(0.7);
+	event.EnableEtaCut(2.4);
 
 	float r = 0.0f;
 	float  increment = 0.05f;
@@ -96,7 +103,7 @@ int main(void)
 	double lastTime = glfwGetTime();
 	int nbFrames = 0;
 
-	beam.Start(glfwGetTime());
+	beam.Start((float)glfwGetTime());
 
 	/* Loop until the user closes the window */
 	while (!glfwWindowShouldClose(window))
