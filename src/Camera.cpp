@@ -28,6 +28,14 @@ void Camera::Rotate(float angle, glm::vec3 axis) {
 	viewMatrix = glm::lookAt(position, centerOfWorld, glm::vec3(0, 1, 0));
 }
 
+void Camera::ZoomOut(float zoomFactor) {
+	position = position + (zoomFactor-1.0f)*(position-centerOfWorld);
+	viewMatrix = glm::lookAt(position, centerOfWorld, glm::vec3(0, 1, 0));
+}
+void Camera::ZoomIn(float zoomFactor) {
+	ZoomOut(1.0f / zoomFactor);
+}
+
 void Camera::sideView() {
 	setPosition(glm::vec3(0.0f, 0.0f, 10.0f));
 	setCenterOfWorld(glm::vec3(0.0f, 0.0f, 0.0f));
@@ -50,4 +58,8 @@ void Camera::isometricView() {
 	setPosition(glm::vec3(5.0f, 5.0f, 5.0f));
 	setCenterOfWorld(glm::vec3(0.0f, 0.0f, 0.0f));
 	viewMatrix = glm::lookAt(position, centerOfWorld, glm::vec3(0, 1, 0));
+}
+
+float Camera::getDistanceFromCenterOfWorld() {
+	return glm::length(position - centerOfWorld);
 }

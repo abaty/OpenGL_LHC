@@ -28,6 +28,10 @@ public:
 	void Draw(const VertexArray& va, const IndexBuffer& ib, const Shader& shader, GLenum mode) const;
 	void Draw(const VertexArray& va, const IndexBuffer& ib, const Shader& shader, GLenum mode, unsigned int count) const;
 	void Draw(const VertexArray& va, const IndexBuffer& ib, const Shader& shader, GLenum mode, unsigned int count, unsigned int offset) const;
+
+	//drawing without an index buffer (for stuff that is in order 0-nVtxs)
+	void DrawNoIB(const VertexArray& va, const Shader& shader, GLenum mode, unsigned int count) const;
+	void DrawNoIB(const VertexArray& va, const Shader& shader, GLenum mode, unsigned int count, unsigned int offset) const;
 };
 
 //end done

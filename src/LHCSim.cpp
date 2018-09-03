@@ -89,16 +89,17 @@ int main(void)
 
 	Renderer renderer;
 
-	float secondToNSConversion = 1.0;//can think of this as an overall scale factor
+	float secondToNSConversion = 2.0;//can think of this as an overall scale factor
 	Beam beam = Beam("LHC", secondToNSConversion);
-	beam.SetPileup(5);
+	beam.SetPileup(12);
 	MCGenerator mcGen = MCGenerator(generatorType::PYTHIA8);
 	MyEvent event = MyEvent(glfwGetTime(), 0.76, 0.96, &beam, &mcGen);
-	event.EnablePtCut(0.7);
-	event.EnableEtaCut(2.4);
+	//event.EnablePtCut(0.7f);
+	//event.EnableEtaCut(2.4f);
 
 	float r = 0.0f;
 	float  increment = 0.05f;
+	bool doZoomIn = false;
 
 	double lastTime = glfwGetTime();
 	int nbFrames = 0;
@@ -124,6 +125,8 @@ int main(void)
 		shader.SetUniform4f("u_Color", r, 0.3f, 0.8f, 1.0f);
 
 		camera.Rotate(0.0075f);
+		if(doZoomIn) camera.ZoomIn(1.0015f);
+		else         camera.ZoomOut(1.0015f);
 		glm::mat4 projView = camera.getProjectionViewMatrix();
 		shader.SetUniform4x4f("u_Rotation", projView);
 		//renderer.Draw(va, *ib, shader, GL_TRIANGLES);
@@ -138,12 +141,15 @@ int main(void)
 		trkShader.SetUniform4x4f("u_Rotation", projView);
 
 		//update event and draw it
-		if( event.Update(glfwGetTime()) ) event.SetupDraw();
+		if (event.Update(glfwGetTime())) event.SetupDraw();
 		event.Draw( &renderer, &trkShader);
 
 		if (r > 1.0f) increment = -0.05f;
 		if (r < 0.0f) increment = 0.05f;
 		r += increment;
+
+		if (camera.getDistanceFromCenterOfWorld() > 10.1f) doZoomIn = true;
+		if (camera.getDistanceFromCenterOfWorld() < 1.5f) doZoomIn = false;
 
 		GLCall(glfwSwapBuffers(window)); 		/* Swap front and back buffers */
 		GLCall(glfwPollEvents());			/* Poll for and process events */

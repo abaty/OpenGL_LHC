@@ -11,6 +11,10 @@ Add more ways to control the pileup
 
 
 
+Need to speed up drawing a ton of lines because it is taking too long to make all the draw commands
+Idea:   1 vertex array with all the vertices with x,y,z,i (will be big, i means its the ith index on a track)
+		1 large index array that uses multiDrawElements here or primitive restart
+		https://www.khronos.org/opengl/wiki/Vertex_Rendering
 
 
 

@@ -55,7 +55,7 @@ void MyEvent::SetupDraw() {
 	std::vector< VertexArray* >().swap(trkVertexArrays);
 
 	for (unsigned int i = 0; i < nTrack; i++) {
-		VertexBuffer* tempVB = new VertexBuffer((vtxPositions.at(i)).data(), nTimeIntervals * 4 * sizeof(float));
+		VertexBuffer* tempVB = new VertexBuffer((vtxPositions.at(i)).data(), (vtxPositions.at(i)).size() * sizeof(float));
 		trkVertexBuffer.push_back(tempVB);
 
 		VertexArray* tempVA = new VertexArray();
@@ -65,8 +65,7 @@ void MyEvent::SetupDraw() {
 }
 
 void MyEvent::Draw(Renderer* r, Shader* s) {
-	unsigned int nIndicesToDraw = 1 + (unsigned int)(nTimeIntervals * timeSinceStart / animationTime);
-	if (nIndicesToDraw > (unsigned int)nTimeIntervals) nIndicesToDraw = nTimeIntervals;
+	unsigned int maxIndicesToDraw = 1 + (unsigned int)(nTimeIntervals * timeSinceStart / animationTime);
 
 	GLCall(glLineWidth(2));
 	s->SetUniform1f("u_fractionOfPropagationTimeElapsed", (float)(timeSinceStart) / (float)(animationTime));
@@ -75,34 +74,28 @@ void MyEvent::Draw(Renderer* r, Shader* s) {
 	s->SetUniform1f("u_nPointsOfGradient", 0.025f * nTimeIntervals);
 	s->SetUniform1f("u_alphaModifierForFade", getAlphaModiferForFade());
 
+	float timingTemp = glfwGetTime();
 	for (unsigned int i = 0; i < nTrack; i++) {
-		if ( abs(tracks.at(i).PID()) == 13 ) {//muon
-			s->SetUniform4f("u_Color", 0.8f, 0.05f, 0.05f, 0.0f);
-			r->Draw(*(trkVertexArrays.at(i)), trkIB, *s, GL_LINE_STRIP, nIndicesToDraw);
-		 } else if (abs(tracks.at(i).PID()) == 11) {//electron
-			s->SetUniform4f("u_Color", 1.0f, 1.0f, 0.2f, 0.0f);
-			r->Draw(*(trkVertexArrays.at(i)), trkIB, *s, GL_LINE_STRIP, nIndicesToDraw);
-		 } else if (abs(tracks.at(i).PID()) == 2212) {//proton
-			 s->SetUniform4f("u_Color", 0.0f, 0.8f, 1.0f, 0.0f);
-			 r->Draw(*(trkVertexArrays.at(i)), trkIB, *s, GL_LINE_STRIP, nIndicesToDraw);
-		 } else if (abs(tracks.at(i).PID()) == 321) {//kaon
-			 s->SetUniform4f("u_Color", 0.6f, 0.2f, 1.0f, 0.0f);
-			 r->Draw(*(trkVertexArrays.at(i)), trkIB, *s, GL_LINE_STRIP, nIndicesToDraw);
-		} else if (abs(tracks.at(i).PID()) == 211) { //pion
-			s->SetUniform4f("u_Color", 0.1f, 0.8f, 0.1f, 0.0f);
-			r->Draw(*(trkVertexArrays.at(i)), trkIB, *s, GL_LINE_STRIP, nIndicesToDraw);
-		} else { //other
-			s->SetUniform4f("u_Color", 1.0f, 1.0f, 1.0f, 0.0f);
-			r->Draw(*(trkVertexArrays.at(i)), trkIB, *s, GL_LINE_STRIP, nIndicesToDraw);
-		}
+		if      (abs(tracks.at(i).PID()) == 13 )  s->SetUniform4f("u_Color", 0.8f, 0.05f, 0.05f, 0.0f); //muon
+		else if (abs(tracks.at(i).PID()) == 11)   s->SetUniform4f("u_Color", 1.0f, 1.0f, 0.2f, 0.0f);   //electron
+		else if (abs(tracks.at(i).PID()) == 2212) s->SetUniform4f("u_Color", 0.0f, 0.8f, 1.0f, 0.0f);   //proton
+		else if (abs(tracks.at(i).PID()) == 321)  s->SetUniform4f("u_Color", 0.6f, 0.2f, 1.0f, 0.0f);   //kaon
+		else if (abs(tracks.at(i).PID()) == 211)  s->SetUniform4f("u_Color", 0.1f, 0.8f, 0.1f, 0.0f);   //pion
+		else									  s->SetUniform4f("u_Color", 1.0f, 1.0f, 1.0f, 0.0f);   //other
 
+		unsigned int nIndicesToDraw = maxIndicesToDraw;
+		//using 4 here because it is the size of the number of floats in the attribute array
+		if (nIndicesToDraw > (unsigned int)(vtxPositions.at(i)).size() / 4) nIndicesToDraw = (vtxPositions.at(i)).size() / 4;
+
+		r->Draw(*(trkVertexArrays.at(i)), trkIB, *s, GL_LINE_STRIP, nIndicesToDraw);
 	}
+	std::cout << "Draw calls took: " << glfwGetTime() - timingTemp << " s" << std::endl;
 }
 
 float MyEvent::getAlphaModiferForFade() {
-	if (timeSinceStart < fadeStartTime) return 1.0f;
-	if (timeSinceStart > refreshTime) return 0.0f;
-	return (float) (1.0f - (timeSinceStart - fadeStartTime)/(refreshTime - fadeStartTime));
+if (timeSinceStart < fadeStartTime) return 1.0f;
+if (timeSinceStart > refreshTime) return 0.0f;
+return (float)(1.0f - (timeSinceStart - fadeStartTime) / (refreshTime - fadeStartTime));
 }
 
 void MyEvent::DeleteVertexBuffers() {
@@ -142,7 +135,7 @@ void MyEvent::FillEventBuffer() {
 	thisMCGenerator->NewEvent(b_tracks);
 	//add pileups if wanted
 	beamline->mutex_pileup->lock();
-	unsigned int extraInteractions = (unsigned int)beamline->GetPileup()+0.001-1;//add slight offset to take care of any weird float conversion errors
+	unsigned int extraInteractions = (unsigned int)beamline->GetPileup() + 0.001 - 1;//add slight offset to take care of any weird float conversion errors
 	beamline->mutex_pileup->unlock();
 	for (unsigned int i = 0; i < extraInteractions; i++) {
 		thisMCGenerator->NewEvent(b_tracks);
@@ -177,26 +170,33 @@ void MyEvent::FillEventBuffer() {
 		std::vector< float > tempPositions;
 
 		//setup initial parameters
-		glm::vec3 trkX = glm::vec3( t.dz()*(SQRT2*bunchLength/100.0f) , 0.0f, 0.0f);//offset in z direction some
+		glm::vec3 trkX = glm::vec3(t.dz()*(SQRT2*bunchLength / 100.0f), 0.0f, 0.0f);//offset in z direction some
 		glm::vec3 trkP = glm::vec3(t.Px(), t.Py(), t.Pz());
 		glm::vec3 B = glm::vec3(3.8f, 0.0f, 0.0f);
 
-		//relativistic particle in B field is same as non-relativistic w/ mass term replaced by gamma*mass (energy)
 		double e = sqrt(t.P2() + t.Mass()*t.Mass());
+		bool isGoodPropagation = true;
 
+		//relativistic particle in B field is same as non-relativistic w/ mass term replaced by gamma*mass (energy)
 		for (unsigned int j = 0; j < (unsigned int)nTimeIntervals; j++) {
 			if (i == 0) b_indexArray.push_back(j);
+
+			//if (j > 180) continue;  can terminate tracks early here with a continue
 
 			//write down positions
 			for (int k = 0; k < 3; k++) tempPositions.push_back((float)trkX[k]);
 			tempPositions.push_back((float)j);//index position needed for fading the track in the track Shader
 
 			//keep particles at their original position/momentum if they haven't been produced yet (from a delayed production vertex)
-			if ( (t.dt() - minT) * SQRT2*bunchLength/100.0f/SPEED_OF_LIGHT_M_PER_NS >= j*timeStep ) continue;
-			
+			if ((t.dt() - minT) * SQRT2*bunchLength / 100.0f / SPEED_OF_LIGHT_M_PER_NS >= j*timeStep) continue;
+
 			//update positions for next iteration based on the momentum from this iteration
 			glm::vec3 newX = glm::vec3();
 			for (int k = 0; k < 3; k++) newX[k] = (float)(trkX[k] + trkP[k] / e * timeStep * SPEED_OF_LIGHT_M_PER_NS);
+			//if (t.PID() == 11 || t.PID() == -11){
+			//	std::cout << j << " " << trkX[0] << " " << trkX[1] << " " << trkX[2] << " " << trkP[0] << " " << trkP[1] << " " << trkP[2] << std::endl;
+			//}
+
 
 			//RK4 integration of ODE of momentum dp/dt = q(p x B)/E
 			//unit conversion is needed b/c B is in Tesla (SI), t is in ns, but p,E,q are in natural units
@@ -218,6 +218,11 @@ void MyEvent::FillEventBuffer() {
 
 			glm::vec3 newP = glm::vec3();
 			for (int k = 0; k < 3; k++) newP[k] = (float)(trkP[k] + (k1[k] + 2 * k2[k] + 2 * k3[k] + k4[k]) / 6.0f);
+			if ( (glm::length(newP) / e > 1.01f) && (isGoodPropagation == true)) {
+				std::cout << "Numerical instability detected! Not outputting this track!" << std::endl;
+				isGoodPropagation = false;
+				b_nTrack--;
+			}
 
 			/*Simple euler integration (was giving timestep-dependent errors)
 			//update positions for next iteration based on the momentum from this iteration
@@ -235,7 +240,7 @@ void MyEvent::FillEventBuffer() {
 			//if (i == 0) std::cout <<"\n" << j<< " \n" << trkX[0] << " " << trkX[1] << " " << trkX[2] << std::endl;
 			//if (i == 0) std::cout << trkP[0] << " " << trkP[1] << " " << trkP[2] << std::endl;
 		}
-		b_vtxPositions.push_back(tempPositions);
+		if(isGoodPropagation) b_vtxPositions.push_back(tempPositions);
 	}
 }
 

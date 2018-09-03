@@ -70,6 +70,18 @@ void Renderer::Draw(const VertexArray& va, const IndexBuffer& ib, const Shader& 
 	GLCall(glDrawElements(mode, count, GL_UNSIGNED_INT, (void*) (offset * sizeof(unsigned int))));
 }
 
+void Renderer::DrawNoIB(const VertexArray& va, const Shader& shader, GLenum mode, unsigned int count) const {
+	shader.Bind();
+	va.Bind();
+	GLCall(glDrawArrays(mode, 0, count));
+}
+
+void Renderer::DrawNoIB(const VertexArray& va, const Shader& shader, GLenum mode, unsigned int count, unsigned int offset) const {
+	shader.Bind();
+	va.Bind();
+	GLCall(glDrawArrays(mode, offset, count));
+}
+
 void Renderer::Clear() const {
 	GLCall(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 }

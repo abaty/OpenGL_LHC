@@ -102,7 +102,7 @@ void MCGenerator::InitializePythia8() {
 		//thisPythia->readString("SoftQCD:inelastic = on");//takes ages to initialize
 		thisPythia->readString("SoftQCD:nondiffractive = on");
 		//thisPythia->readString("HardQCD:all = on");
-		//thisPythia->readString("PhaseSpace:pTHatMin = 4000.");
+		//thisPythia->readString("PhaseSpace:pTHatMin = 300.");
 		//thisPythia->readString("Top:all = on");
 
 		if (isPythiaQuiet) thisPythia->readString("Print:quiet = on");
@@ -120,7 +120,7 @@ void MCGenerator::InitializePythia8() {
 }
 
 void MCGenerator::GetPythia8Event(std::vector< Track >& tracks) {
-	std::cout << "GETTING AN EVENT FROM PYTHIA" << std::endl;
+	//std::cout << "GETTING AN EVENT FROM PYTHIA" << std::endl;
 	dz = std::normal_distribution<double>(0.0, 1.0);
 	double thisDz = dz(gausGen);
 	double thisDt = dz(gausGen);

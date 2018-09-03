@@ -24,9 +24,12 @@ public:
 	~Camera();
 
 	void Rotate(float angle, glm::vec3 axis = glm::vec3(0.0, 1.0f, 0.0f));
+	void ZoomOut(float zoomFactor);
+	void ZoomIn(float zoomFactor);//just calls ZoomOut with 1/zoomFactor
 
 	inline glm::vec3 getPosition() { return position; }
 	inline glm::vec3 getCenterOfWorld() { return centerOfWorld; }
+	float getDistanceFromCenterOfWorld();
 
 	inline void setPosition(glm::vec3 _position) { position = _position; }
 	inline void setCenterOfWorld(glm::vec3 _center) { centerOfWorld = _center; }
