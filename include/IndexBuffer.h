@@ -14,6 +14,7 @@ public:
 	void Bind() const;
 	void Unbind() const;
 	void AddData(const unsigned int* data, unsigned int count);
+	void SubData(const unsigned int* data, unsigned int count, unsigned int offset);
 
 	inline unsigned int GetCount() const { return m_Count; }
 };

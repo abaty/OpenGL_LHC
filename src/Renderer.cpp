@@ -70,6 +70,13 @@ void Renderer::Draw(const VertexArray& va, const IndexBuffer& ib, const Shader& 
 	GLCall(glDrawElements(mode, count, GL_UNSIGNED_INT, (void*) (offset * sizeof(unsigned int))));
 }
 
+void Renderer::MultiDraw(const VertexArray& va, const IndexBuffer& ib, const Shader& shader, GLenum mode, GLsizei* counts,  GLvoid* offsets, unsigned int nPrimitives) const {
+	shader.Bind();
+	va.Bind();
+	ib.Bind();
+	GLCall(glMultiDrawElements(mode, counts, GL_UNSIGNED_INT, (GLvoid**)offsets, (GLsizei)nPrimitives));
+}
+
 void Renderer::DrawNoIB(const VertexArray& va, const Shader& shader, GLenum mode, unsigned int count) const {
 	shader.Bind();
 	va.Bind();
@@ -80,6 +87,12 @@ void Renderer::DrawNoIB(const VertexArray& va, const Shader& shader, GLenum mode
 	shader.Bind();
 	va.Bind();
 	GLCall(glDrawArrays(mode, offset, count));
+}
+
+void Renderer::MultiDrawNoIB(const VertexArray& va, const Shader& shader, GLenum mode, GLint* count, GLsizei* offset, GLsizei _nPrimitives) const {
+	shader.Bind();
+	va.Bind();
+	GLCall(glMultiDrawArrays(mode, offset, count, _nPrimitives));
 }
 
 void Renderer::Clear() const {

@@ -24,8 +24,8 @@ enum beamType {
 class Beam {
 public:
 
-	Beam(std::string collider, float _secondsToNSConversion);//fast constructor that will implement presets with "SetTo*()" functions
-	Beam(bool _isFixedTarget, int _nPipes, float _bunchSpacing, float _bunchLength, float _secondsToNSConversion, beamType _beam1, float _energy1, beamType _beam2, float _energy2);
+	Beam(std::string collider, float _bunchCrossingDelay, float _secondsToNSConversion);//fast constructor that will implement presets with "SetTo*()" functions
+	Beam(bool _isFixedTarget, int _nPipes, float _bunchSpacing, float _bunchLength, float _bunchCrossingDelay, float _secondsToNSConversion, beamType _beam1, float _energy1, beamType _beam2, float _energy2);
 	~Beam();
 
 	void SetupDraw();
@@ -34,6 +34,7 @@ public:
 	void Start(float time);
 	void Stop();
 
+	inline float    GetBunchCrossingDelay() { return bunchCrossingDelay; }
 	inline float    GetBunchSpacing() { return bunchSpacing; }
 	inline float    GetBunchLength() { return bunchLength; }
 	inline float    GetPileup() { return pileup; }
@@ -47,6 +48,7 @@ public:
 	inline float    GetStartTime() { return startTime; }
 	inline float	GetSecondsToNSConversion() { return secondToNSConversion; }
 
+	inline void SetBunchCrossingDelay(float _b) { bunchCrossingDelay = _b; }
 	inline void SetBunchSpacing(float _bunchSpacing) { bunchSpacing = _bunchSpacing;  }
 	inline void SetBunchLength(float _bunchLength) { bunchLength = _bunchLength; }
 	inline void SetEnergy1(float e) { energy1 = e; }
@@ -78,6 +80,7 @@ private:
 	float startTime;
 	float secondToNSConversion;
 
+	float bunchCrossingDelay;//ns, should be less than the bunch spacing
 	float bunchSpacing; //(ns)
 	float bunchLength; //cm
 	float pileup = 1;

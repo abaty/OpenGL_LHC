@@ -36,12 +36,12 @@ void MCGenerator::NewEvent(std::vector< Track >& tracks) {
 
 //Isotropic generator calls
 void MCGenerator::GetBasicIsotropicEvent(std::vector< Track >& tracks) {
-	srand(1);
+	srand(time(NULL));
 	dz = std::normal_distribution<double> (0.0, 1.0);
 	double thisDz = dz(gausGen);
 	double thisDt = dz(gausGen);
 
-	unsigned int multiplicity = (unsigned int)(2 + rand() % 500);
+	unsigned int multiplicity = (unsigned int)(2 + rand() % 5000);
 	for (unsigned int i = 0; i < multiplicity; i++) {
 		//random charge of -1 or +1
 		int charge = -1 + 2 * (rand() % 2);

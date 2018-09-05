@@ -1,8 +1,8 @@
 #include "include/Beam.h"
-#define FURTHEST_DIST_FROM_ORIGIN 50.0f
+#define FURTHEST_DIST_FROM_ORIGIN 100.0f
 
-Beam::Beam(std::string collider, float _secondsToNSConversion)
-	:secondToNSConversion(_secondsToNSConversion)
+Beam::Beam(std::string collider, float _bunchCrossingDelay, float _secondsToNSConversion)
+	:secondToNSConversion(_secondsToNSConversion), bunchCrossingDelay(_bunchCrossingDelay)
 {
 	mutex_pileup = new std::mutex();
 	mutex_bunchLength = new std::mutex();
@@ -16,9 +16,10 @@ Beam::Beam(std::string collider, float _secondsToNSConversion)
 	if (collider.find("LEP") != std::string::npos) SetToLEP();
 }
 
-Beam::Beam(bool _isFixedTarget, int _nPipes, float _bunchSpacing, float _bunchLength, float _secondsToNSConversion, beamType _beam1, float _energy1, beamType _beam2 = NOTHING, float _energy2 = 0)
+Beam::Beam(bool _isFixedTarget, int _nPipes, float _bunchSpacing, float _bunchLength, float _bunchCrossingDelay,float _secondsToNSConversion, beamType _beam1, float _energy1, beamType _beam2 = NOTHING, float _energy2 = 0)
 	: isFixedTarget(_isFixedTarget), nPipes(_nPipes), bunchSpacing(_bunchSpacing), bunchLength(_bunchLength), 
-	secondToNSConversion(_secondsToNSConversion), beam1(_beam1), energy1(_energy1), beam2(_beam2), energy2(_energy2)
+	secondToNSConversion(_secondsToNSConversion), beam1(_beam1), energy1(_energy1), beam2(_beam2), energy2(_energy2),
+	bunchCrossingDelay(_bunchCrossingDelay)
 {
 	mutex_pileup = new std::mutex();
 
@@ -127,7 +128,7 @@ void Beam::SetupDraw() {
 void Beam::Draw(Renderer* r, Shader* s) {
 	GLCall(glLineWidth(2));
 	s->SetUniform4f("u_Color", 0.7f, 0.7f, 0.7f, 1.0f);
-	s->SetUniform1f("u_fadeStartDist", 10.0f);
+	s->SetUniform1f("u_fadeStartDist", 20.0f);
 	s->SetUniform1f("u_fadeEndDist", FURTHEST_DIST_FROM_ORIGIN+1.0f);
 	r->Draw(*beamlineVertexArray, beamlineIB, *s, GL_LINE_STRIP,nPointsAlongBeam);
 	if( nPipes==2 ) r->Draw(*beamlineVertexArray, beamlineIB, *s, GL_LINE_STRIP, nPointsAlongBeam, nPointsAlongBeam);

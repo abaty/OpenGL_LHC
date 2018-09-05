@@ -12,6 +12,8 @@ struct VertexBufferElement {
 	static unsigned int GetSizeOfType(unsigned int type) {
 		switch (type) {
 			case GL_FLOAT: return 4;
+			case GL_UNSIGNED_SHORT: return 2;
+			case GL_SHORT: return 2;
 			case GL_UNSIGNED_INT: return 4;
 			case GL_UNSIGNED_BYTE: return 1;	
 		}
@@ -50,6 +52,18 @@ public:
 	void Push<unsigned char>(unsigned int count) {
 		m_Elements.push_back({ GL_UNSIGNED_BYTE, count, GL_FALSE });
 		m_Stride += VertexBufferElement::GetSizeOfType(GL_UNSIGNED_BYTE) * count;
+	}
+
+	template<>
+	void Push<unsigned short>(unsigned int count) {
+		m_Elements.push_back({ GL_UNSIGNED_SHORT, count, GL_FALSE });
+		m_Stride += VertexBufferElement::GetSizeOfType(GL_UNSIGNED_SHORT) * count;
+	}
+
+	template<>
+	void Push<short>(unsigned int count) {
+		m_Elements.push_back({ GL_SHORT, count, GL_FALSE });
+		m_Stride += VertexBufferElement::GetSizeOfType(GL_SHORT) * count;
 	}
 
 	inline const std::vector<VertexBufferElement> GetElements() const { return m_Elements; }

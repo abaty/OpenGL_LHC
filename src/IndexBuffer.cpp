@@ -20,6 +20,12 @@ void IndexBuffer::AddData(const unsigned int* data, unsigned int count) {
 	GLCall(glBufferData(GL_ELEMENT_ARRAY_BUFFER, count * sizeof(unsigned int), data, GL_STATIC_DRAW));
 }
 
+void IndexBuffer::SubData(const unsigned int* data, unsigned int count, unsigned int offset) {
+	m_Count = count;
+	Bind();
+	GLCall(glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, offset, count * sizeof(unsigned int), data));
+}
+
 void IndexBuffer::Bind() const {
 	GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_RendererID));
 }

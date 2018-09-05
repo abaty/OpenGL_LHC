@@ -26,12 +26,17 @@ public:
 
 	void Clear() const;
 	void Draw(const VertexArray& va, const IndexBuffer& ib, const Shader& shader, GLenum mode) const;
-	void Draw(const VertexArray& va, const IndexBuffer& ib, const Shader& shader, GLenum mode, unsigned int count) const;
-	void Draw(const VertexArray& va, const IndexBuffer& ib, const Shader& shader, GLenum mode, unsigned int count, unsigned int offset) const;
+	void Draw(const VertexArray& va, const IndexBuffer& ib, const Shader& shader, GLenum mode, 
+		unsigned int count) const;
+	void Draw(const VertexArray& va, const IndexBuffer& ib, const Shader& shader, GLenum mode, 
+		unsigned int count, unsigned int offset) const;
+	void MultiDraw(const VertexArray& va, const IndexBuffer& ib, const Shader& shader, GLenum mode, 
+		GLsizei* counts, GLvoid* offsets, unsigned int nPrimitives) const;
 
 	//drawing without an index buffer (for stuff that is in order 0-nVtxs)
 	void DrawNoIB(const VertexArray& va, const Shader& shader, GLenum mode, unsigned int count) const;
 	void DrawNoIB(const VertexArray& va, const Shader& shader, GLenum mode, unsigned int count, unsigned int offset) const;
+	void MultiDrawNoIB(const VertexArray& va, const Shader& shader, GLenum mode, GLint* count, GLsizei* offset, GLsizei _nPrimitives) const;
 };
 
 //end done
