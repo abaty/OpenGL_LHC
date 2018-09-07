@@ -21,7 +21,7 @@ public:
 	void SetCurrentGenerator(generatorType g) { generator = g; }
 	void SetIsPythiaQuiet(bool _b) { isPythia8Initialized = _b; }
 
-	void NewEvent(std::vector< Track >& tracks);
+	void NewEvent(std::vector< Track >& tracks, unsigned short nCopies);
 
 private:
 	
@@ -36,7 +36,7 @@ private:
 	Pythia8::Pythia* thisPythia;
 	bool isPythia8Initialized = false;
 	void InitializePythia8();
-	void GetPythia8Event(std::vector< Track >& tracks);
+	void GetPythia8Event(std::vector< Track >& tracks, unsigned short nCopies);
 	bool isPythiaQuiet = true;
 
 

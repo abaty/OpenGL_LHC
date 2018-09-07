@@ -15,8 +15,9 @@ bool GLLogCall(const char* function, const char* file, int line) {
 	return true;
 }
 
-Renderer::Renderer(bool doDepthBuffering, bool doAlphaBlending) 
+Renderer::Renderer(bool doDepthBuffering, bool doAlphaBlending, bool doAntiAliasing ) 
 {
+	if (doAntiAliasing) GLCall(glEnable(GL_MULTISAMPLE));
 	if (doDepthBuffering) GLCall(glEnable(GL_DEPTH_TEST));
 	if (doAlphaBlending) {
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); 
@@ -39,6 +40,14 @@ void Renderer::DisableAlphaBlending() const {
 
 void Renderer::EnableAlphaBlending() const {
 	GLCall(glEnable(GL_BLEND));
+}
+
+void Renderer::EnableAntiAliasing() const {
+	GLCall(glEnable(GL_MULTISAMPLE));
+}
+
+void Renderer::DisableAntiAliasing() const {
+	GLCall(glDisable(GL_MULTISAMPLE));
 }
 
 void Renderer::Draw(const VertexArray& va, const IndexBuffer& ib, const Shader& shader, GLenum mode) const {

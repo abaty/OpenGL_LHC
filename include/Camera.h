@@ -5,6 +5,7 @@
 
 class Camera {
 private:
+	glm::vec3 defaultCamera;
 
 	glm::vec3 position;
 	glm::vec3 centerOfWorld;
@@ -16,6 +17,8 @@ private:
 	float aspectRatio;
 	float nearVisionLimit;
 	float farVisionLimit;
+
+	bool doShowBeampipe = true;
 
 public:
 
@@ -38,13 +41,18 @@ public:
 	void frontView();
 	void topView();
 	void isometricView();
+	void resetView();
+
+	inline bool GetDoShowBeamPipe() { return doShowBeampipe; };
 
 	inline glm::mat4 getViewMatrix() { return viewMatrix; }
 	inline glm::mat4 getProjectionMatrix() { return projectionMatrix; }
 	inline glm::mat4 getProjectionViewMatrix() { return projectionMatrix * viewMatrix; }
 
-	inline void setFieldOfView(float FoV) { fieldOfView = FoV; }
-	inline void setAspectRatio(float AR) { aspectRatio = AR; }
-	inline void setNearVisionLimit(float NVL) { nearVisionLimit = NVL; }
-	inline void setFarVisionLimit(float FVL) { farVisionLimit = FVL; }
+	void setFieldOfView(float FoV);
+	void setAspectRatio(float AR);
+	void setNearVisionLimit(float NVL);
+	void setFarVisionLimit(float FVL);
+
+	inline float getAspectRatio() { return aspectRatio; }
 };

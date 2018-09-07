@@ -23,20 +23,22 @@ MCGenerator::~MCGenerator() {
 	}
 }
 
-void MCGenerator::NewEvent(std::vector< Track >& tracks) {
-	if(generator == generatorType::ISOTROPIC) GetBasicIsotropicEvent(tracks);
+void MCGenerator::NewEvent(std::vector< Track >& tracks, unsigned short nCopies) {
+	if (generator == generatorType::ISOTROPIC) {
+		for (unsigned short i = 0; i < nCopies; i++) GetBasicIsotropicEvent(tracks);
+	}
 	if(generator == generatorType::PYTHIA8) {
 		if (!isPythia8Initialized) {
 			std::cout << "Warning! Pythia 8.1 was not initalized!  Initializing now, but with default initialization settings!" << std::endl;
 			InitializePythia8();
 		}
-		GetPythia8Event(tracks);
+		GetPythia8Event(tracks, nCopies);
 	}
 }
 
 //Isotropic generator calls
 void MCGenerator::GetBasicIsotropicEvent(std::vector< Track >& tracks) {
-	srand(time(NULL));
+	srand((unsigned int)time(NULL));
 	dz = std::normal_distribution<double> (0.0, 1.0);
 	double thisDz = dz(gausGen);
 	double thisDt = dz(gausGen);
@@ -89,21 +91,29 @@ void MCGenerator::InitializePythia8() {
 		thisPythia->readString("Random:seed = 0");
 
 		//e+e-
-		/*
-		thisPythia->readString("Beams:idA = 11");
-		thisPythia->readString("Beams:idB = -11");
-		thisPythia->readString("Beams:eCM = 2000.");
-		thisPythia->readString("WeakSingleBoson:all = on");
-		thisPythia->readString("WeakDoubleBoson:all = on");*/
-
+		//thisPythia->readString("Beams:idA = 11");
+		//thisPythia->readString("Beams:idB = -11");
+		//thisPythia->readString("Beams:eCM = 91.");
+		//thisPythia->readString("WeakSingleBoson:all = on");
+		//thisPythia->readString("WeakDoubleBoson:all = on");
+		
 		//pp
 		thisPythia->readString("Beams:eCM = 13000.");
-		thisPythia->readString("PartonLevel:MPI = off");//TURNING THIS ON MAKES GENERATING THINGS TAKE A VERY LONG TIME
-		//thisPythia->readString("SoftQCD:inelastic = on");//takes ages to initialize
-		thisPythia->readString("SoftQCD:nondiffractive = on");
+		//thisPythia->readString("PartonLevel:MPI = off");
+		thisPythia->readString("PartonLevel:MPI = on");
+		thisPythia->readString("SoftQCD:inelastic = on");
+		//thisPythia->readString("SoftQCD:nondiffractive = on");
 		//thisPythia->readString("HardQCD:all = on");
-		//thisPythia->readString("PhaseSpace:pTHatMin = 300.");
+		//thisPythia->readString("PhaseSpace:pTHatMin = 4000.");
 		//thisPythia->readString("Top:all = on");
+
+		//pp fixed target
+		/*thisPythia->readString("Beams:frameType = 2");
+		thisPythia->readString("Beams:eA = 0");
+		thisPythia->readString("Beams:eB = 2000");
+		thisPythia->readString("PartonLevel:MPI = on");
+		thisPythia->readString("SoftQCD:inelastic = on");*/
+
 
 		if (isPythiaQuiet) thisPythia->readString("Print:quiet = on");
 		else thisPythia->readString("Print:quiet = off");
@@ -119,11 +129,34 @@ void MCGenerator::InitializePythia8() {
 	std::cout << "PYTHIA IS INITIALIZED" << std::endl;
 }
 
-void MCGenerator::GetPythia8Event(std::vector< Track >& tracks) {
+void MCGenerator::GetPythia8Event(std::vector< Track >& tracks, unsigned short nCopies) {
 	//std::cout << "GETTING AN EVENT FROM PYTHIA" << std::endl;
 	dz = std::normal_distribution<double>(0.0, 1.0);
-	double thisDz = dz(gausGen);
-	double thisDt = dz(gausGen);
+
+	std::vector< double > thisDz;
+	std::vector< double > thisDt;
+	std::vector< short > zflip;
+	std::vector< short > chargeflip;
+	std::vector< float > rotation;
+	std::vector< float > boost;
+
+	//these values let us 'reuse' events for when we need lots of MB events fast (for pileup)
+	for (unsigned short i = 0; i < nCopies; i++) {
+		thisDz.push_back(dz(gausGen));
+		thisDt.push_back(dz(gausGen));
+		if (i == 0) {
+			zflip.push_back(1);
+			chargeflip.push_back(1);
+			rotation.push_back(0);
+			boost.push_back(0);
+		}
+		else {
+			zflip.push_back(2 * (rand() % 2) - 1);
+			chargeflip.push_back(2 * (rand() % 2) - 1);
+			rotation.push_back( UniformRandom(0, 2*MATH_PI));
+			boost.push_back( UniformRandom( -1.0, 1.0) );
+		}
+	}
 
 	//look for a good event
 	while (!thisPythia->next()) {};
@@ -131,10 +164,20 @@ void MCGenerator::GetPythia8Event(std::vector< Track >& tracks) {
 	for (int i = 0; i < thisPythia->event.size(); ++i){
 		if (thisPythia->event[i].isFinal()) {
 			if (thisPythia->event[i].isCharged()) {
-				//have to swap the directions b/c pythia's coordinates are not the same as the screen's!
-				Track t = Track(thisPythia->event[i].pz(), thisPythia->event[i].py(), thisPythia->event[i].px(),
-					thisPythia->event[i].charge(), (float) thisPythia->event[i].m0(), (int) thisPythia->event[i].id(), (float)thisDz, (float)thisDt);
-				tracks.push_back( t );
+				for (unsigned short j = 0; j < nCopies; j++) {
+					//have to swap the directions b/c pythia's coordinates are not the same as the screen's!
+					Track t = Track(
+						(float)(zflip.at(j) * (thisPythia->event[i].pz() * cosh(boost.at(j)) - thisPythia->event[i].e() * sinh(boost.at(j)))),//lorentz boost and then flip
+						(float)(thisPythia->event[i].px() * sin(rotation.at(j)) + thisPythia->event[i].py() * cos(rotation.at(j))),//rotation
+						(float)(thisPythia->event[i].px() * cos(rotation.at(j)) - thisPythia->event[i].py() * sin(rotation.at(j))),//rotation
+						(int)thisPythia->event[i].charge()*chargeflip.at(j),//flip charged
+						(float)thisPythia->event[i].m0(),//mass
+						(int)thisPythia->event[i].id(),//PID
+						(float)thisDz.at(j),//vtx z
+						(float)thisDt.at(j)//vtx t
+					);
+					tracks.push_back(t);
+				}
 			}
 		}
 	}

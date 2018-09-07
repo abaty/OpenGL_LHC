@@ -15,6 +15,7 @@
 #include <vector>
 #include <iostream>
 #include <thread>
+#include <mutex>
 #include <time.h>
 
 
@@ -54,6 +55,8 @@ public:
 	inline bool GetIsSettingUp() { return isSettingUpNextEvent; }
 
 	inline float GetPtCut() { return ptCut; }
+
+	std::mutex * mutex_writingToSimulationOutput;
 
 	//rendering items
 	VertexBufferLayout trackBufferLayout;
@@ -102,11 +105,13 @@ private:
 
 	void ResetSetupBooleans();
 	void GetNewEvent();
+	void RunSimulation(int nThreads, float minT, float bunchLength);//method for non-multithreading
+	void RunSimulation(int threadID, int nThreads, float minT, float bunchLength);//for multithreading
 	void DeleteVertexBuffers();
 	void DeleteVertexArrays();
 
 	void FillEventBuffer();
 
 	std::vector< std::thread > eventGeneratorThreads;//vector to hold our created thread(s)
-
+	std::vector< std::thread > eventSimulationThreads;//vector to hold our extra simulation thread(s)
 };

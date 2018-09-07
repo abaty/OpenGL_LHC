@@ -1,10 +1,14 @@
 #include "include/MyEvent.h"
-#define SPEED_OF_LIGHT_M_PER_NS 0.2998
-#define UNIT_CONVESTION_FOR_P 1.602*SPEED_OF_LIGHT_M_PER_NS/5.39
-#define SQRT2 1.4142135
+#define MAX_EVENTS_BEFORE_USING_COPIES 300
+#define SIZE_OF_EVENT_VTXBUFFER_BYTES 250000000
+#define SHORTS_IN_VTX_BUFFER 5
+#define SPEED_OF_LIGHT_M_PER_NS 0.2998f
+#define UNIT_CONVESTION_FOR_P 1.602f*SPEED_OF_LIGHT_M_PER_NS/5.39f
+#define SQRT2 1.4142135f
+#define TURN_OFF_MULTITHREADING 0 //0 = multithreading turned on, 1 = no multithreading
+
 
 MyEvent::MyEvent(double _animationTime, double _fadeStartTime, Beam* _beam, MCGenerator* _mcGen)
-	: timeSinceStart(0)
 {
 	thisMCGenerator = _mcGen;
 	beamline = _beam;
@@ -21,13 +25,12 @@ MyEvent::MyEvent(double _animationTime, double _fadeStartTime, Beam* _beam, MCGe
 	trackBufferLayout.Push<unsigned short>(1);
 	trackBufferLayout.Push<short>(1);
 
-	//with index buffer
-	//trkIB.AddData((const unsigned int*)NULL, 100000000);
 	trkVertexBuffer = new VertexBuffer();
-	trkVertexBuffer->AddData((const void*)NULL, 100000000);
+	trkVertexBuffer->AddData((const void*)NULL, SIZE_OF_EVENT_VTXBUFFER_BYTES);
 	trkVertexArray = new VertexArray();
 
 	//launch new thread to get an event
+	mutex_writingToSimulationOutput = new std::mutex();
 	eventGeneratorThreads.push_back(std::thread(&MyEvent::FillEventBuffer, this));//fill event buffer
 
 	//get ready to setup
@@ -36,7 +39,6 @@ MyEvent::MyEvent(double _animationTime, double _fadeStartTime, Beam* _beam, MCGe
 	
 	//swap in new event and start setup process
 	GetNewEvent();
-	startTime = glfwGetTime();
 	SetupDraw();
 }
 
@@ -46,14 +48,11 @@ MyEvent::~MyEvent() {
 }
 
 int MyEvent::Update() {
-	timeSinceStart = glfwGetTime() - startTime;
-	timeSinceEventStart = timeSinceStart - delayTime;
-	if (timeSinceEventStart > refreshTime) {//get new event if it's been too long
-		GetNewEvent();
+	timeSinceEventStart = beamline->GetTimeSinceLastBunchCrossing() - delayTime;
 
-		startTime = glfwGetTime();
-		timeSinceStart = 0;
-		timeSinceEventStart = -delayTime;
+	if ( beamline->GetBPTXFlag() ) {//get new event if there has been a bunch crossing
+		beamline->SetBPTXFlag(false); //reset the flag to acknowledge that we got the message from the beamline
+		GetNewEvent();
 
 		ResetSetupBooleans();
 		SetupDraw();
@@ -70,8 +69,6 @@ int MyEvent::Update() {
 
 void MyEvent::ResetSetupBooleans() {
 	isSettingUpNextEvent = true;
-	//with index buffer
-	//isIndexBufferReady = false;
 	isVertexBufferReady = false;
 }
 
@@ -85,20 +82,8 @@ void MyEvent::SetupDraw() {
 		return;
 	}
 
-	/*
-	//bind index arrays
-	if (!isIndexBufferReady) {
-		Timer time = Timer();
-		trkIB.AddData(indexArray[renderIndex].data(), indexArray[renderIndex].size());
-		glFinish();
-		std::cout << "Index Array took " << time.Restart() << " s to bind" << std::endl;
-		
-		isIndexBufferReady = true;
-		return;
-	}*/
-
 	//Vertex buffer
-	if (timeSinceStart > delayTime) {
+	if ( beamline->GetTimeSinceLastBunchCrossing() > delayTime) {
 		std::cout << "nTracks: " << nTrack[renderIndex] << std::endl;
 
 		Timer time = Timer();
@@ -112,12 +97,13 @@ void MyEvent::SetupDraw() {
 
 void MyEvent::Draw(Renderer* r, Shader* s) {
 	GLCall(glLineWidth(2));
+	s->Bind();
 	s->SetUniform1f("u_fractionOfPropagationTimeElapsed", (float)(timeSinceEventStart) / (float)(animationTime));
 	s->SetUniform1f("u_minAlpha", 0.5f);
 	s->SetUniform1f("u_pointsOnTrack", (float)nTimeIntervals);
 	s->SetUniform1f("u_nPointsOfGradient", 0.025f * nTimeIntervals);
 	s->SetUniform1f("u_alphaModifierForFade", getAlphaModiferForFade());
-	s->SetUniform1f("u_inverseLengthScale", 1.0/lengthScale[renderIndex]);
+	s->SetUniform1f("u_inverseLengthScale", (float) 1.0/lengthScale[renderIndex]);
 
 	s->SetUniform4f("u_ColorPion", 0.1f, 0.8f, 0.1f, 0.0f);     //pion
 	s->SetUniform4f("u_ColorKaon", 0.6f, 0.2f, 1.0f, 0.0f);     //kaon
@@ -133,8 +119,6 @@ void MyEvent::Draw(Renderer* r, Shader* s) {
 		if (maxIndicesToDraw < (unsigned int)(tempPointsOnTrack[i])) tempPointsOnTrack[i] = maxIndicesToDraw;
 	}
 
-	//with indexBuffer
-	//r->MultiDraw(*(trkVertexArray), trkIB, *s, GL_LINE_STRIP, tempPointsOnTrack.data(), trackOffsets[renderIndex].data(), nTrack[renderIndex]);
 	r->MultiDrawNoIB(*(trkVertexArray), *s, GL_LINE_STRIP, tempPointsOnTrack.data(), (GLsizei*)trackOffsets[renderIndex].data(), nTrack[renderIndex]);
 }
 
@@ -168,23 +152,51 @@ void MyEvent::GetNewEvent() {
 }
 
 void MyEvent::FillEventBuffer() {
-	//free vectors memory
+	Timer time = Timer();
 
-	//with index buffer
-	//std::vector< unsigned int >().swap(indexArray[generatorIndex]);
+	//free vectors memory
 	std::vector<Track>().swap(tracks[generatorIndex]);
-	std::vector< short >().swap(vtxPositions[generatorIndex]);
 	std::vector< GLsizei >().swap(pointsOnTrack[generatorIndex]);
 	std::vector< unsigned int >().swap(trackOffsets[generatorIndex]);
+	std::vector< short >().swap(vtxPositions[generatorIndex]);
+	std::cout << "Clearing Buffers took: " << time.Restart() << " s" << std::endl;
+
+	//add pileups if wanted
+	std::default_random_engine generator;
+	generator.seed((unsigned int)std::time(NULL));
+	unsigned int interactions;
+
+	beamline->mutex_pileup->lock();
+	std::poisson_distribution<int> poisson(beamline->GetPileup());
+	while (true) {
+		if (!(beamline->GetIsPoissonPU())) {//fixed pu
+			interactions = (unsigned int)(beamline->GetPileup() + 0.001);//add slight offset to take care of any weird float conversion errors
+		}
+		else {//poisson
+			interactions = (unsigned int)(poisson(generator));
+		}
+		if (interactions > 0 || (!beamline->GetIgnore0PU()) ) break;
+	}
+	beamline->mutex_pileup->unlock();
 
 	//get a SIGNAL event from our event generator
-	thisMCGenerator->NewEvent(tracks[generatorIndex]);
-	//add pileups if wanted
-	beamline->mutex_pileup->lock();
-	unsigned int extraInteractions = (unsigned int)(beamline->GetPileup() + 0.001 - 1);//add slight offset to take care of any weird float conversion errors
-	beamline->mutex_pileup->unlock();
-	for (unsigned int i = 0; i < extraInteractions; i++) {
-		thisMCGenerator->NewEvent(tracks[generatorIndex]);
+	std::cout << "Interactions: " << interactions << std::endl;
+	if (interactions > 0) {
+		thisMCGenerator->NewEvent(tracks[generatorIndex], 1);
+		interactions--;
+	}
+
+	//start reusing slighly randomized pythia events multiple times once pileup reaches a certain point just to speed things up
+	unsigned int nCopies = 1 + (int)(trackLengthModifier*interactions/MAX_EVENTS_BEFORE_USING_COPIES);
+	for (unsigned int i = interactions; i > 0 ; ) {
+		if (i >= nCopies) {
+			thisMCGenerator->NewEvent(tracks[generatorIndex], nCopies);
+			i -= nCopies;
+		}
+		else {
+			thisMCGenerator->NewEvent(tracks[generatorIndex], i);
+			break;
+		}
 	}
 
 	//get bunchlength
@@ -199,29 +211,58 @@ void MyEvent::FillEventBuffer() {
 	}
 
 	nTrack[generatorIndex] = 0;
+	std::cout << "Generation took: " << time.Restart() << " s" << std::endl;
 
 	//run simulation on event
-	Timer time = Timer();
+	//calculate now many threads we want
+	//subtract because we want to leave a thread open for the main program and 1 'spare' thread to not flood the computer
+	int nThreads = std::thread::hardware_concurrency()-2;
+	if (nThreads <= 0 || TURN_OFF_MULTITHREADING) nThreads = 1;
+
+	//launch extra threads but skip 0 because the launching thread is the 0th thread
+	std::vector< std::thread >().swap(eventSimulationThreads);
+	void (MyEvent::*thisRunSimulation)(int, int, float, float) = &MyEvent::RunSimulation;//this selects the correct overload of RunSimulation (4 args)
+	for (int i = 1; i < nThreads; i++) {
+		eventSimulationThreads.push_back( std::thread( thisRunSimulation, this, i, nThreads, minT, bunchLength ) );
+	}
+	RunSimulation(nThreads, minT, bunchLength);
+	//collect remaining threads
+	for (unsigned int i = 0; i < eventSimulationThreads.size(); i++) eventSimulationThreads.at(i).join();
+
+	std::cout << "Simulation took: " << time.TimeSplit() << " s for " << nTrack[generatorIndex] << " tracks." << std::endl;
+}
+
+void MyEvent::RunSimulation(int nThreads, float minT, float bunchLength) { RunSimulation(0, nThreads, minT, bunchLength); }
+
+void MyEvent::RunSimulation(int threadID, int nThreads, float minT, float bunchLength) {
+	//relevant length scale is set by the maximum propagation range of particles during the animation (ctau)
+	//we subdivide this space into a grid of (max short) width so that we can save space in the vtx buffer
+	//add 3 sigma of the bunchlength because particles can start not at the origin
+	float maxSizeOfSignedShort = 32768 - 300;//300 is a 1% safety limit for overflow safety
+	lengthScale[generatorIndex] = (float) (maxSizeOfSignedShort / (nTimeIntervals*timeStep*SPEED_OF_LIGHT_M_PER_NS + 3 * SQRT2*bunchLength / 100.0));
+
+	short * tempPositions = (short*) malloc(nTimeIntervals * sizeof(short) * SHORTS_IN_VTX_BUFFER);
+	glm::vec3 B = glm::vec3(3.8f, 0.0f, 0.0f);
+
 	for (unsigned int i = 0; i < tracks[generatorIndex].size(); i++) {
-		Track t = tracks[generatorIndex].at(i);
+		if (i % nThreads != threadID) continue;//have the nth thread do the nth track in a cycle...
+		Track t = tracks[generatorIndex][i];
 
 		//apply relevant cuts
 		if (doPtCut && t.Pt() < ptCut) continue;
 		if (doEtaCut && (t.Eta() < etaCutLow || t.Eta() > etaCutHigh)) continue;
 
-		std::vector< float > tempPositions;
-		//relevant length scale is set by the maximum propagation range of particles during the animation (ctau)
-		//we subdivide this space into a grid of (max short) width so that we can save space in the vtx buffer
-		//add 3 sigma of the bunchlength because particles can start not at the origin
-		float maxSizeOfSignedShort = 32768-300;//300 is a 1% safety limit for overflow safety
-		lengthScale[generatorIndex] = maxSizeOfSignedShort /(nTimeIntervals*timeStep*SPEED_OF_LIGHT_M_PER_NS + 3*SQRT2*bunchLength/100.0);
+		unsigned int tempPositionsValidLength = 0;
 
 		//setup initial parameters
 		glm::vec3 trkX = glm::vec3(t.dz()*(SQRT2*bunchLength / 100.0f), 0.0f, 0.0f);//offset in z direction some
 		glm::vec3 trkP = glm::vec3(t.Px(), t.Py(), t.Pz());
-		glm::vec3 B = glm::vec3(3.8f, 0.0f, 0.0f);
 
-		double e = sqrt(t.P2() + t.Mass()*t.Mass());
+		//calculate some convenient variables once before going into loop
+		float e = sqrt(t.P2() + t.Mass()*t.Mass());
+		float position_EulerCoefficient =  timeStep * SPEED_OF_LIGHT_M_PER_NS / e;
+		float momentum_RK4Coefficient =  t.Charge() / e * timeStep * UNIT_CONVESTION_FOR_P;
+		float timeOffset =  (t.dt() - minT) * SQRT2*bunchLength / 100.0f / SPEED_OF_LIGHT_M_PER_NS;
 		bool isGoodPropagation = true;
 
 		//relativistic particle in B field is same as non-relativistic w/ mass term replaced by gamma*mass (energy)
@@ -229,55 +270,45 @@ void MyEvent::FillEventBuffer() {
 			//if (i>10 && j > 180) continue;  //can terminate tracks early here with a continue
 
 			//write down positions
-			for (int k = 0; k < 3; k++)  tempPositions.push_back((short) (trkX[k] * lengthScale[generatorIndex])); 
+			for (int k = 0; k < 3; k++)  tempPositions[j*SHORTS_IN_VTX_BUFFER + k] = (short)(trkX[k] * lengthScale[generatorIndex]);
 			//std::cout << j << " " << trkX[0] << " " << trkX[1] << " " << trkX[2] << std::endl;
-
-			short* tempShort = (short*)(&j);//convert unsigned to signed in memory
-			tempPositions.push_back(*tempShort);
-			tempPositions.push_back((short)abs(t.PID()));
+			
+			tempPositions[j*SHORTS_IN_VTX_BUFFER + 3] = *(short*)(&j);//convert unsigned to signed in memory
+			tempPositions[j*SHORTS_IN_VTX_BUFFER + 4] = (short)abs(t.PID());
+			tempPositionsValidLength += SHORTS_IN_VTX_BUFFER;
 
 			//keep particles at their original position/momentum if they haven't been produced yet (from a delayed production vertex)
-			if ((t.dt() - minT) * SQRT2*bunchLength / 100.0f / SPEED_OF_LIGHT_M_PER_NS >= j*timeStep) continue;
+			if ( timeOffset >= j*timeStep) continue;
 
 			//update positions for next iteration based on the momentum from this iteration
 			glm::vec3 newX = glm::vec3();
-			for (int k = 0; k < 3; k++) newX[k] = (float)(trkX[k] + trkP[k] / e * timeStep * SPEED_OF_LIGHT_M_PER_NS);
+			for (int k = 0; k < 3; k++) newX[k] = (float)(trkX[k] + position_EulerCoefficient * trkP[k]);
 
 			//RK4 integration of ODE of momentum dp/dt = q(p x B)/E
 			//unit conversion is needed b/c B is in Tesla (SI), t is in ns, but p,E,q are in natural units
 			glm::vec3 k1 = glm::vec3();
 			glm::vec3 pXB = glm::cross(trkP, B);
-			for (int k = 0; k < 3; k++) k1[k] = (float)(t.Charge() / e * pXB[k] * timeStep * UNIT_CONVESTION_FOR_P);
+			for (int k = 0; k < 3; k++) k1[k] = (float)(momentum_RK4Coefficient * pXB[k]);
 
 			glm::vec3 k2 = glm::vec3();
 			pXB = glm::cross(trkP + k1 * 0.5f, B);
-			for (int k = 0; k < 3; k++) k2[k] = (float)(t.Charge() / e * pXB[k] * timeStep * UNIT_CONVESTION_FOR_P);
+			for (int k = 0; k < 3; k++) k2[k] = (float)(momentum_RK4Coefficient * pXB[k]);
 
 			glm::vec3 k3 = glm::vec3();
 			pXB = glm::cross(trkP + k2 * 0.5f, B);
-			for (int k = 0; k < 3; k++) k3[k] = (float)(t.Charge() / e * pXB[k] * timeStep * UNIT_CONVESTION_FOR_P);
+			for (int k = 0; k < 3; k++) k3[k] = (float)(momentum_RK4Coefficient * pXB[k]);
 
 			glm::vec3 k4 = glm::vec3();
 			pXB = glm::cross(trkP + k3, B);
-			for (int k = 0; k < 3; k++) k4[k] = (float)(t.Charge() / e * pXB[k] * timeStep * UNIT_CONVESTION_FOR_P);
+			for (int k = 0; k < 3; k++) k4[k] = (float)(momentum_RK4Coefficient * pXB[k]);
 
 			glm::vec3 newP = glm::vec3();
 			for (int k = 0; k < 3; k++) newP[k] = (float)(trkP[k] + (k1[k] + 2 * k2[k] + 2 * k3[k] + k4[k]) / 6.0f);
-			if ( (glm::length(newP) / e > 1.01f) && (isGoodPropagation == true)) {
+			
+			if ((isGoodPropagation == true) && (glm::length(newP) / e > 1.01f)) {
 				std::cout << "Numerical instability detected! Not outputting this track!" << std::endl;
 				isGoodPropagation = false;
 			}
-
-			/*Simple euler integration (was giving timestep-dependent errors)
-			//update positions for next iteration based on the momentum from this iteration
-			glm::vec3 newX  = glm::vec3();
-			for (int k = 0; k < 3; k++) newX[k] += (float)( trkX[k] + trkP[k] / e * timeStep * SPEED_OF_LIGHT_M_PER_NS);
-
-			//update momenta for next iteration based on X, P, B (tricky part)
-			glm::vec3 newP = glm::vec3();
-			glm::vec3 pXB = glm::cross(trkP, B);
-			for (int k = 0; k < 3; k++) newP[k] += (float)( trkP[k] + t.Charge() / e * pXB[k] * timeStep )
-			*/
 
 			trkX = newX;
 			trkP = newP;
@@ -286,30 +317,24 @@ void MyEvent::FillEventBuffer() {
 		}
 
 		//if propagation was good, copy temp vector into master positions vector
-		//the magic number 5 below is the number of shorts used to describe each vertex
+		mutex_writingToSimulationOutput->lock();
 		if (isGoodPropagation) {
+			if (SIZE_OF_EVENT_VTXBUFFER_BYTES / sizeof(short) - vtxPositions[generatorIndex].size() < 	tempPositionsValidLength) {
+				std::cout << "WARNING: VTX BUFFER IS NOT BIG ENOUGH TO HANDLE THESE EVENTS!" << std::endl;
+				mutex_writingToSimulationOutput->unlock();
+				break;
+			}
 			nTrack[generatorIndex]++;
 
-			//with index buffer
-			//unsigned int oldIndexArraySize = indexArray[generatorIndex].size();
-			//trackOffsets[generatorIndex].push_back((oldIndexArraySize * sizeof(unsigned int)));
-
-			//without index buffer
 			unsigned int oldArraySize = vtxPositions[generatorIndex].size();
-			trackOffsets[generatorIndex].push_back((GLsizei)(oldArraySize / 5));
-
-			unsigned int points = 0;
-			for (unsigned int i = 0; i < tempPositions.size(); i++) {
+			trackOffsets[generatorIndex].push_back((GLsizei)(oldArraySize / SHORTS_IN_VTX_BUFFER));
+			for (unsigned int i = 0; i < tempPositionsValidLength; i++) {
 				vtxPositions[generatorIndex].push_back(tempPositions[i]);
-				if (i % 5 == 0) {
-					points++;
-					//with index buffer
-					//indexArray[generatorIndex].push_back(oldIndexArraySize + i / 5);//see above about the 5
-				}
 			}
-			pointsOnTrack[generatorIndex].push_back((GLsizei)points);
+			pointsOnTrack[generatorIndex].push_back((GLsizei) tempPositionsValidLength / SHORTS_IN_VTX_BUFFER);
 		}
+		mutex_writingToSimulationOutput->unlock();
 	}
-	std::cout << "Simulation took: " << time.TimeSplit() << " s" << std::endl;
+	free(tempPositions);
 }
 

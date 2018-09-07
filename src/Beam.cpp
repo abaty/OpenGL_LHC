@@ -4,6 +4,7 @@
 Beam::Beam(std::string collider, float _bunchCrossingDelay, float _secondsToNSConversion)
 	:secondToNSConversion(_secondsToNSConversion), bunchCrossingDelay(_bunchCrossingDelay)
 {
+	mutex_BPTXFlag = new std::mutex();
 	mutex_pileup = new std::mutex();
 	mutex_bunchLength = new std::mutex();
 
@@ -21,7 +22,9 @@ Beam::Beam(bool _isFixedTarget, int _nPipes, float _bunchSpacing, float _bunchLe
 	secondToNSConversion(_secondsToNSConversion), beam1(_beam1), energy1(_energy1), beam2(_beam2), energy2(_energy2),
 	bunchCrossingDelay(_bunchCrossingDelay)
 {
+	mutex_BPTXFlag = new std::mutex();
 	mutex_pileup = new std::mutex();
+	mutex_bunchLength = new std::mutex();
 
 	beamlineBufferLayout.Push<float>(3);
 	beamlineBufferLayout.Push<float>(1);
@@ -33,11 +36,31 @@ Beam::Beam(bool _isFixedTarget, int _nPipes, float _bunchSpacing, float _bunchLe
 
 Beam::~Beam() {
 	delete mutex_pileup;
+	delete mutex_bunchLength;
+	delete mutex_BPTXFlag;
 }
 
 void Beam::SetPileup(float _pileup) {
 	mutex_pileup->lock();
 	pileup = _pileup;
+	mutex_pileup->unlock();
+}
+
+void Beam::SetBPTXFlag(bool _b) { 
+	mutex_BPTXFlag->lock();
+	BPTXFlag = _b;
+	mutex_BPTXFlag->unlock();
+};
+
+void Beam::SetIsPoissonPU(bool _b) { 
+	mutex_pileup->lock();
+	isPoissonPU = _b; 
+	mutex_pileup->unlock();
+}
+
+void Beam::SetIgnore0PU(bool _b) {
+	mutex_pileup->lock();
+	ignore0PU = _b; 
 	mutex_pileup->unlock();
 }
 
@@ -126,7 +149,7 @@ void Beam::SetupDraw() {
 }
 
 void Beam::Draw(Renderer* r, Shader* s) {
-	GLCall(glLineWidth(2));
+	GLCall(glLineWidth(1));
 	s->SetUniform4f("u_Color", 0.7f, 0.7f, 0.7f, 1.0f);
 	s->SetUniform1f("u_fadeStartDist", 20.0f);
 	s->SetUniform1f("u_fadeEndDist", FURTHEST_DIST_FROM_ORIGIN+1.0f);
@@ -134,15 +157,24 @@ void Beam::Draw(Renderer* r, Shader* s) {
 	if( nPipes==2 ) r->Draw(*beamlineVertexArray, beamlineIB, *s, GL_LINE_STRIP, nPointsAlongBeam, nPointsAlongBeam);
 }
 
-void Beam::Start(float time) {
-	startTime = time;
+void Beam::Start() {
+	startTime = (float)glfwGetTime();
+	SetBPTXFlag(true);
 	isStarted = true;
 }
 
 void Beam::Stop() {
 	isStarted = false;
+	SetBPTXFlag(false);
 }
 
-void Beam::Update(float time) {
+void Beam::UpdateTiming() {
+	if (!isStarted) return;
 
+	timeSinceLastBunchCrossing = (float)glfwGetTime() - startTime;
+	if (timeSinceLastBunchCrossing > bunchSpacing / secondToNSConversion) {
+		if (!GetBPTXFlag()) {
+			Start();
+		}
+	}
 }

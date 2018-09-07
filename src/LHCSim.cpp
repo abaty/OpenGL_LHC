@@ -14,7 +14,7 @@
 #include "include/VertexArray.h"
 #include "include/shader.h"
 
-#include "include/Camera.h"
+#include "include/MultiCamera.h"
 #include "include/MyEvent.h"
 #include "include/Beam.h"
 
@@ -41,6 +41,7 @@ int main(void)
 	/* Create a windowed mode window and its OpenGL context */
 	int aspectRatioX = 1280;
 	int aspectRatioY = 720;
+	//GLFWwindow* window = glfwCreateWindow(aspectRatioX, aspectRatioY, "LHCSim", NULL, NULL);
 
 	GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
 	const GLFWvidmode* mode = glfwGetVideoMode(primaryMonitor);
@@ -49,8 +50,11 @@ int main(void)
 	glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
 	glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
 	glfwWindowHint(GLFW_SAMPLES, 4);//multisampling for anti-aliasing
-	//GLFWwindow* window = glfwCreateWindow(mode->width, mode->height, "LHCSim", primaryMonitor, NULL);
-	GLFWwindow* window = glfwCreateWindow(aspectRatioX, aspectRatioY, "LHCSim", NULL, NULL);
+
+	aspectRatioX = mode->width;
+	aspectRatioY = mode->height;
+	GLFWwindow* window = glfwCreateWindow(aspectRatioX, aspectRatioY, "LHCSim", primaryMonitor, NULL);
+
 	if (!window)
 	{
 		glfwTerminate();
@@ -66,46 +70,39 @@ int main(void)
 	std::cout << glGetString(GL_VENDOR) << std::endl;
 	std::cout << glGetString(GL_RENDERER) << std::endl;
 	std::cout << glGetString(GL_VERSION) << std::endl;
+	std::cout << "Number of threads supported: " << std::thread::hardware_concurrency() << std::endl;
 
-	//turn on anti-aliasing
-	glEnable(GL_MULTISAMPLE);
+	MultiCamera multiCamera = MultiCamera(aspectRatioX, aspectRatioY, glm::vec3(0.0f, 3.0f, 10.0f));
+	//multiCamera.setViewMode(viewMode::ONE_SCREEN);
+	//multiCamera.setViewMode(viewMode::FOUR_CORNERS);
+	//multiCamera.setViewMode(viewMode::ONE_LEFT_TWO_SQUARES_RIGHT);
+	//multiCamera.setViewMode(viewMode::ONE_LEFT_TWO_SQUARES_RIGHT_BOTTOMLEFTSPLIT);
+	multiCamera.setViewMode(viewMode::ONE_LEFT_TWO_SQUARES_RIGHT_BOTTOMLEFTSPLIT_ZOOM);
 
-	float positions[12] = { -1.1f, 0.1f, 1.1f, 1.1f, 0.0f, 1.1f, 1.1f, 0.0f, -1.1f, -1.1f, 0.0f, -1.1f};
-	unsigned int indices[6] = { 0, 1, 2, 2, 3, 0 };
-
-	Camera camera = Camera(glm::vec3(0.0f, 5.0f, 10.0f));
-	camera.setAspectRatio((float)mode->width/(float)mode->height);
-
-	VertexArray va;
-	VertexBuffer *vb = new VertexBuffer(positions, 4 * 3 * sizeof(float));
-	VertexBufferLayout layout;
-	layout.Push<float>(3);
-	va.AddBuffer(*vb, layout);
-	IndexBuffer *ib = new IndexBuffer(indices, 6);
+	Renderer renderer(true, true, true);
 
 	Shader shader("resources/shaders/basic.shader");
 	Shader trkShader("resources/shaders/trackShader.shader");
 	Shader beamlineShader("resources/shaders/beamline.shader");
+	Shader frameBorderShader("resources/shaders/frameBorder.shader");
 
-	Renderer renderer;
-
-	float secondToNSConversion = 1.0;//can think of this as an overall scale factor
-	Beam beam = Beam("LHC", 0.1, secondToNSConversion);
+	float secondToNSConversion = 2.0;//can think of this as an overall scale factor
+	Beam beam = Beam("LHC", 0.05, secondToNSConversion);
+	//beam.SetIsFixedTarget(1);
+	//beam.SetNPipes(1);
+	//beam.SetIsPoissonPU(false);
 	beam.SetPileup(1);
-	//MCGenerator mcGen = MCGenerator(generatorType::PYTHIA8);
-	MCGenerator mcGen = MCGenerator(generatorType::ISOTROPIC);
+	MCGenerator mcGen = MCGenerator(generatorType::PYTHIA8);
 	MyEvent event = MyEvent(0.76, 0.96, &beam, &mcGen);
-	//event.EnablePtCut(0.3f);
+	//event.EnablePtCut(1.0f);
 	//event.EnableEtaCut(2.4f);
 
-	float r = 0.0f;
-	float  increment = 0.05f;
 	bool doZoomIn = false;
-
 	double lastTime = glfwGetTime();
 	int nbFrames = 0;
+	unsigned int viewportSwaps = 0;
 
-	beam.Start((float)glfwGetTime());
+	beam.Start();
 
 	/* Loop until the user closes the window */
 	while (!glfwWindowShouldClose(window))
@@ -119,46 +116,53 @@ int main(void)
 			lastTime =currentTime;
 		}
 
+		//stuff that is done before actually rendering
+		//camera control
+		multiCamera.cameras.at(0).Rotate(0.0075f);
+		if (doZoomIn) multiCamera.cameras.at(0).ZoomIn(1.0015f);
+		else          multiCamera.cameras.at(0).ZoomOut(1.0015f);
+		if (multiCamera.cameras.at(0).getDistanceFromCenterOfWorld() > 15.1f) doZoomIn = true;
+		if (multiCamera.cameras.at(0).getDistanceFromCenterOfWorld() < 1.0f) doZoomIn = false;
+
+		//beamline and event updates
+		beam.UpdateTiming();
+		/*if (beam.GetBPTXFlag()) {
+			multiCamera.setViewMode((viewMode)(viewportSwaps % 4));
+			viewportSwaps++;
+		}*/
+		event.Update();
+
 		/* Render here */
 		renderer.Clear();
 
-		shader.Bind();
-		shader.SetUniform4f("u_Color", r, 0.3f, 0.8f, 1.0f);
+		for (int i = 0; i < multiCamera.getNCameras(); i++) {
+			multiCamera.setViewport(i);
 
-		camera.Rotate(0.0075f);
-		if(doZoomIn) camera.ZoomIn(1.0015f);
-		else         camera.ZoomOut(1.0015f);
-		glm::mat4 projView = camera.getProjectionViewMatrix();
-		shader.SetUniform4x4f("u_Rotation", projView);
-		//renderer.Draw(va, *ib, shader, GL_TRIANGLES);
+			shader.Bind();
+			shader.SetUniform4f("u_Color", 0.0f, 0.3f, 0.8f, 1.0f);
+			glm::mat4 projView = multiCamera.cameras.at(i).getProjectionViewMatrix();
+			shader.SetUniform4x4f("u_Rotation", projView);
 
-		//beamline drawing
-		beamlineShader.Bind();
-		beamlineShader.SetUniform4x4f("u_Rotation", projView);
-		//beam.Update(glfwGetTime());
-		beam.Draw(&renderer, &beamlineShader);
+			//beamline drawing
+			beamlineShader.Bind();
+			beamlineShader.SetUniform4x4f("u_Rotation", projView);
+			if (multiCamera.cameras.at(i).GetDoShowBeamPipe()) {
+				beam.Draw(&renderer, &beamlineShader);
+			}
 
-		trkShader.Bind();
-		trkShader.SetUniform4x4f("u_Rotation", projView);
+			trkShader.Bind();
+			trkShader.SetUniform4x4f("u_Rotation", projView);
 
-		//update event and draw it
-		event.Update();
-		if(!event.GetIsSettingUp()) event.Draw( &renderer, &trkShader);
+			//draw event
+			if(!event.GetIsSettingUp()) event.Draw( &renderer, &trkShader);
 
-		if (r > 1.0f) increment = -0.05f;
-		if (r < 0.0f) increment = 0.05f;
-		r += increment;
-
-		if (camera.getDistanceFromCenterOfWorld() > 10.1f) doZoomIn = true;
-		if (camera.getDistanceFromCenterOfWorld() < 0.5f) doZoomIn = false;
+			//draw any frame borders if needed
+			multiCamera.DrawBorders(&renderer, &frameBorderShader, i);
+		}
 
 		GLCall(glfwSwapBuffers(window)); 		/* Swap front and back buffers */
 		GLCall(glfwPollEvents());			/* Poll for and process events */
 	}
-
-	delete vb;
-	delete ib;
-
 	glfwTerminate();
 
 	std::cout << "hi" << std::endl;

@@ -3,6 +3,7 @@
 #include "include/VertexBuffer.h"
 #include "include/VertexBufferLayout.h"
 #include "include/IndexBuffer.h"
+#include <GLFW/glfw3.h>
 #include <iostream>
 #include <string>
 #include <mutex>
@@ -30,8 +31,8 @@ public:
 
 	void SetupDraw();
 	void Draw(Renderer* r, Shader* s);
-	void Update(float time);
-	void Start(float time);
+	void UpdateTiming();
+	void Start();
 	void Stop();
 
 	inline float    GetBunchCrossingDelay() { return bunchCrossingDelay; }
@@ -47,6 +48,10 @@ public:
 	inline bool     GetIsFixedTarget() { return isFixedTarget; }
 	inline float    GetStartTime() { return startTime; }
 	inline float	GetSecondsToNSConversion() { return secondToNSConversion; }
+	inline double   GetTimeSinceLastBunchCrossing() { return timeSinceLastBunchCrossing; };
+	inline bool		GetIsPoissonPU() { return isPoissonPU; }
+	inline bool		GetIgnore0PU() { return ignore0PU; }
+	inline bool		GetBPTXFlag() { return BPTXFlag; }
 
 	inline void SetBunchCrossingDelay(float _b) { bunchCrossingDelay = _b; }
 	inline void SetBunchSpacing(float _bunchSpacing) { bunchSpacing = _bunchSpacing;  }
@@ -54,6 +59,9 @@ public:
 	inline void SetEnergy1(float e) { energy1 = e; }
 	inline void SetEnergy2(float e) { energy2 = e; }
 	void SetPileup(float _pileup);//mutexed
+	void SetIsPoissonPU(bool _b); //mutexed
+	void SetIgnore0PU(bool _b);   //mutexed
+	void SetBPTXFlag(bool _b);    //mutexed
 
 	inline void SetNPipes(int n) { nPipes = n; UpdateBeams(); }
 	inline void SetIsFixedTarget(bool is) { isFixedTarget = is; UpdateBeams(); }
@@ -72,18 +80,22 @@ public:
 	VertexArray*  beamlineVertexArray;
 	VertexBuffer* beamlineVertexBuffer;
 
+	std::mutex * mutex_BPTXFlag;
 	std::mutex * mutex_pileup;
 	std::mutex * mutex_bunchLength;
 
 private:
 
 	float startTime;
+	float timeSinceLastBunchCrossing;
 	float secondToNSConversion;
+
+	bool BPTXFlag = true;//flag that says if there was a bunch crossing
 
 	float bunchCrossingDelay;//ns, should be less than the bunch spacing
 	float bunchSpacing; //(ns)
 	float bunchLength; //cm
-	float pileup = 1;
+	float pileup = 2;
 
 	int nPipes;
 	int nBeams;
@@ -96,6 +108,8 @@ private:
 	bool isFixedTarget = false;
 	bool isNewed = false;
 	bool isStarted = false;
+	bool isPoissonPU = true;
+	bool ignore0PU = true;
 
 	//note could optimize by suppressing the Y index here if we really needed to
 	static const unsigned int nPointsAlongBeam = 5000;
