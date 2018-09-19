@@ -7,17 +7,18 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
+#include "include/GlobalSettings.h"
 #include "include/Renderer.h"
 #include "include/VertexBuffer.h"
 #include "include/VertexBufferLayout.h"
 #include "include/IndexBuffer.h"
 #include "include/VertexArray.h"
 #include "include/shader.h"
+#include "include/Font.h"
 
 #include "include/MultiCamera.h"
 #include "include/MyEvent.h"
 #include "include/Beam.h"
-
 
 //NOTE that these lines switch from integrated graphics to NVIDIA graphics card
 //undesirable because it breaks multi-platform compatibility (needs <windows.h>)
@@ -28,6 +29,8 @@ extern "C" {
 	_declspec(dllexport) DWORD NvOptimusEnablement = 0x00000001;
 }
 //end of above note
+
+GlobalSettings settings = GlobalSettings();
 
 int main(void)
 {
@@ -41,7 +44,7 @@ int main(void)
 	/* Create a windowed mode window and its OpenGL context */
 	int aspectRatioX = 1280;
 	int aspectRatioY = 720;
-	//GLFWwindow* window = glfwCreateWindow(aspectRatioX, aspectRatioY, "LHCSim", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(aspectRatioX, aspectRatioY, "LHCSim", NULL, NULL);
 
 	GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
 	const GLFWvidmode* mode = glfwGetVideoMode(primaryMonitor);
@@ -51,9 +54,9 @@ int main(void)
 	glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
 	glfwWindowHint(GLFW_SAMPLES, 4);//multisampling for anti-aliasing
 
-	aspectRatioX = mode->width;
-	aspectRatioY = mode->height;
-	GLFWwindow* window = glfwCreateWindow(aspectRatioX, aspectRatioY, "LHCSim", primaryMonitor, NULL);
+	//aspectRatioX = mode->width;
+	//aspectRatioY = mode->height;
+	//GLFWwindow* window = glfwCreateWindow(aspectRatioX, aspectRatioY, "LHCSim", primaryMonitor, NULL);
 
 	if (!window)
 	{
@@ -72,34 +75,35 @@ int main(void)
 	std::cout << glGetString(GL_VERSION) << std::endl;
 	std::cout << "Number of threads supported: " << std::thread::hardware_concurrency() << std::endl;
 
-	MultiCamera multiCamera = MultiCamera(aspectRatioX, aspectRatioY, glm::vec3(0.0f, 3.0f, 10.0f));
+	MultiCamera multiCamera = MultiCamera(aspectRatioX, aspectRatioY, glm::vec3(3.0f, 1.0f, 1.0f));
 	//multiCamera.setViewMode(viewMode::ONE_SCREEN);
 	//multiCamera.setViewMode(viewMode::FOUR_CORNERS);
 	//multiCamera.setViewMode(viewMode::ONE_LEFT_TWO_SQUARES_RIGHT);
 	//multiCamera.setViewMode(viewMode::ONE_LEFT_TWO_SQUARES_RIGHT_BOTTOMLEFTSPLIT);
 	multiCamera.setViewMode(viewMode::ONE_LEFT_TWO_SQUARES_RIGHT_BOTTOMLEFTSPLIT_ZOOM);
 
-	Renderer renderer(true, true, true);
+	Font arial = Font(aspectRatioX, aspectRatioY);
+	Renderer renderer(true, true);
 
 	Shader shader("resources/shaders/basic.shader");
 	Shader trkShader("resources/shaders/trackShader.shader");
 	Shader beamlineShader("resources/shaders/beamline.shader");
 	Shader frameBorderShader("resources/shaders/frameBorder.shader");
 
-	float secondToNSConversion = 2.0;//can think of this as an overall scale factor
-	Beam beam = Beam("LHC", 0.05, secondToNSConversion);
+	float secondToNSConversion = 5.0f;//can think of this as an overall scale factor
+	Beam beam = Beam("LHC", 0.1f, secondToNSConversion);
 	//beam.SetIsFixedTarget(1);
-	//beam.SetNPipes(1);
+	beam.SetNPipes(2);
 	//beam.SetIsPoissonPU(false);
 	beam.SetPileup(1);
 	MCGenerator mcGen = MCGenerator(generatorType::PYTHIA8);
+	//MCGenerator mcGen = MCGenerator(generatorType::ISOTROPIC);
+
 	MyEvent event = MyEvent(0.76, 0.96, &beam, &mcGen);
 	//event.EnablePtCut(1.0f);
-	//event.EnableEtaCut(2.4f);
+	event.EnableEtaCut(1.5f);
 
 	bool doZoomIn = false;
-	double lastTime = glfwGetTime();
-	int nbFrames = 0;
 	unsigned int viewportSwaps = 0;
 
 	beam.Start();
@@ -107,14 +111,7 @@ int main(void)
 	/* Loop until the user closes the window */
 	while (!glfwWindowShouldClose(window))
 	{
-		//check frame rate
-		double currentTime = glfwGetTime();
-		nbFrames++;
-		if (currentTime - lastTime >= 1.0) { // If last prinf() was more than 1 sec ago printf and reset timer
-			printf("%f ms/frame\n", 1000.0 / double(nbFrames));
-			nbFrames = 0;
-			lastTime =currentTime;
-		}
+		if (settings.doFPS) settings.getFPS();
 
 		//stuff that is done before actually rendering
 		//camera control
@@ -154,7 +151,7 @@ int main(void)
 			trkShader.SetUniform4x4f("u_Rotation", projView);
 
 			//draw event
-			if(!event.GetIsSettingUp()) event.Draw( &renderer, &trkShader);
+			if(!event.GetIsSettingUp() && beam.GetIsStarted()) event.Draw( &renderer, &trkShader);
 
 			//draw any frame borders if needed
 			multiCamera.DrawBorders(&renderer, &frameBorderShader, i);

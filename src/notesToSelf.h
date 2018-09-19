@@ -3,12 +3,7 @@
 
 different types of pythia processes
 
-working on getting particles going down beamline
-Need to render the extra alpha detail in the beamline shader based on the time gotten in beam::Update()
-
-3) Try to speed up buffer binding by splitting up binds around multiple frames (index and vertex currently already split up)
-
-
+maybe there is some issue w/ setting the positoin of camera 0 in the multicamera?
 
 
 

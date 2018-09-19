@@ -1,5 +1,6 @@
 #include "include/Beam.h"
-#define FURTHEST_DIST_FROM_ORIGIN 100.0f
+#define FURTHEST_DIST_FROM_ORIGIN 50.0f
+#define SPEED_OF_LIGHT_M_PER_NS 0.2998f
 
 Beam::Beam(std::string collider, float _bunchCrossingDelay, float _secondsToNSConversion)
 	:secondToNSConversion(_secondsToNSConversion), bunchCrossingDelay(_bunchCrossingDelay)
@@ -9,7 +10,6 @@ Beam::Beam(std::string collider, float _bunchCrossingDelay, float _secondsToNSCo
 	mutex_bunchLength = new std::mutex();
 
 	beamlineBufferLayout.Push<float>(3);
-	beamlineBufferLayout.Push<float>(1);
 
 	for (unsigned int i = 0; i< 2 * nPointsAlongBeam; i++) beamlineIndices[i] = i;
 
@@ -102,26 +102,26 @@ void Beam::UpdateBeams() {
 	}
 
 	if (isFixedTarget) {
-		for (int i = 0; i < 4 * nPointsAlongBeam; i++) {
-			if (i % 4 == 0) beamlineEndpoints[i] = FURTHEST_DIST_FROM_ORIGIN * i / (float) nPointsAlongBeam;//only set X coordinate
+		for (int i = 0; i < 3 * nPointsAlongBeam; i++) {
+			if (i % 3 == 0) beamlineEndpoints[i] = FURTHEST_DIST_FROM_ORIGIN * i / (float) nPointsAlongBeam;//only set X coordinate
 			else beamlineEndpoints[i] = 0.0f;
 		}
 	}
 	else if (nPipes == 1) {
-		for (int i = 0; i < 4* nPointsAlongBeam; i++) {
-			if (i % 4 == 0) beamlineEndpoints[i] = -FURTHEST_DIST_FROM_ORIGIN + 2* FURTHEST_DIST_FROM_ORIGIN * i / 4 / (float)nPointsAlongBeam;//only set X coordinate
+		for (int i = 0; i < 3* nPointsAlongBeam; i++) {
+			if (i % 3 == 0) beamlineEndpoints[i] = -FURTHEST_DIST_FROM_ORIGIN + 2* FURTHEST_DIST_FROM_ORIGIN * i / 3 / (float)nPointsAlongBeam;//only set X coordinate
 			else beamlineEndpoints[i] = 0.0f;
 		}
 	}
 	else if (nPipes == 2) {
-		for (int i = 0; i < 4* nPointsAlongBeam; i++) {
-			if (i % 4 == 0) beamlineEndpoints[i] = -FURTHEST_DIST_FROM_ORIGIN + 2 * FURTHEST_DIST_FROM_ORIGIN * i / 4/ (float)nPointsAlongBeam;//set X coordinate
-			else if (i % 4 == 2 ) beamlineEndpoints[i] = beamlineEndpoints[i-2]/100.0f;
+		for (int i = 0; i < 3* nPointsAlongBeam; i++) {
+			if (i % 3 == 0) beamlineEndpoints[i] = -FURTHEST_DIST_FROM_ORIGIN + 2 * FURTHEST_DIST_FROM_ORIGIN * i / 3/ (float)nPointsAlongBeam;//set X coordinate
+			else if (i % 3 == 2 ) beamlineEndpoints[i] = beamlineEndpoints[i-2]/100.0f;
 			else beamlineEndpoints[i] = 0.0f;
 		}
-		for (int i = 4* nPointsAlongBeam; i < 8*nPointsAlongBeam; i++) {
-			if (i % 4 == 0) beamlineEndpoints[i] = -FURTHEST_DIST_FROM_ORIGIN + 2 * FURTHEST_DIST_FROM_ORIGIN * (i- 4*nPointsAlongBeam) / 4 / (float)nPointsAlongBeam;//set X coordinate
-			else if (i % 4 == 2) beamlineEndpoints[i] = -beamlineEndpoints[i - 2] / 100.0f;
+		for (int i = 3* nPointsAlongBeam; i < 6*nPointsAlongBeam; i++) {
+			if (i % 3 == 0) beamlineEndpoints[i] = -FURTHEST_DIST_FROM_ORIGIN + 2 * FURTHEST_DIST_FROM_ORIGIN * (i- 3*nPointsAlongBeam) / 3 / (float)nPointsAlongBeam;//set X coordinate
+			else if (i % 3 == 2) beamlineEndpoints[i] = -beamlineEndpoints[i - 2] / 100.0f;
 			else beamlineEndpoints[i] = 0.0f;
 		}
 	}
@@ -142,19 +142,62 @@ void Beam::SetupDraw() {
 	}
 
 	// bind buffers and VAOs
-	beamlineVertexBuffer = new VertexBuffer( beamlineEndpoints , 2 * nPointsAlongBeam * 4 * sizeof(float));
+	beamlineVertexBuffer = new VertexBuffer( beamlineEndpoints , 2 * nPointsAlongBeam * 3 * sizeof(float));
 	beamlineVertexArray = new VertexArray();
 	beamlineVertexArray->AddBuffer(*beamlineVertexBuffer, beamlineBufferLayout);
 	isNewed = true;
 }
 
 void Beam::Draw(Renderer* r, Shader* s) {
+	if (!settings.doDrawBeamline) return;
 	GLCall(glLineWidth(1));
-	s->SetUniform4f("u_Color", 0.7f, 0.7f, 0.7f, 1.0f);
+
+	//is the beamlin is off, draw it regular (gray)
+	float bunchCenter = (timeSinceLastBunchCrossing * secondToNSConversion - bunchCrossingDelay) * SPEED_OF_LIGHT_M_PER_NS;
+
+	if (!isStarted) {
+		s->SetUniform4f("u_BunchColor", 0.4f, 0.4f, 0.4f, 1.0f);
+		s->SetUniform1f("u_BunchCenter", 0.0f);
+	}
+	else { // otherwise draw some bunches
+		if		(beam1 == beamType::P		|| beam1 == beamType::PBAR)		s->SetUniform4f("u_BunchColor", 0.0f, 0.8f, 1.0f, 1.0f);
+		else if (beam1 == beamType::EMINUS	|| beam1 == beamType::EPLUS)	s->SetUniform4f("u_BunchColor", 1.0f, 1.0f, 0.2f, 1.0f);
+		else if (beam1 == beamType::MUMINUS	|| beam1 == beamType::MUPLUS)	s->SetUniform4f("u_BunchColor", 0.8f, 0.05f, 0.05f, 1.0f);
+		else if (beam1 == beamType::PIMINUS	|| beam1 == beamType::PIPLUS)	s->SetUniform4f("u_BunchColor", 0.1f, 0.8f, 0.1f, 1.0f);
+		else s->SetUniform4f("u_BunchColor", 1.0f, 0.1f, 0.6f, 1.0f);
+		
+		s->SetUniform1f("u_BunchCenter", -bunchCenter);
+	}
+	s->SetUniform4f("u_PipeColor", 0.4f, 0.4f, 0.4f, 1.0f);
+
+	s->SetUniform1f("u_BunchSpacing", bunchSpacing * SPEED_OF_LIGHT_M_PER_NS);
+	s->SetUniform1f("u_2BunchLengthSquared", (float)2*(bunchLength/100.0f)*(bunchLength/100.0f));//denominator of a gaussian
+
 	s->SetUniform1f("u_fadeStartDist", 20.0f);
 	s->SetUniform1f("u_fadeEndDist", FURTHEST_DIST_FROM_ORIGIN+1.0f);
+
+	s->SetUniform1ui("u_bothWays", 0);
+	if (!isFixedTarget && nPipes == 1) s->SetUniform1ui("u_bothWays", 1);
+
 	r->Draw(*beamlineVertexArray, beamlineIB, *s, GL_LINE_STRIP,nPointsAlongBeam);
-	if( nPipes==2 ) r->Draw(*beamlineVertexArray, beamlineIB, *s, GL_LINE_STRIP, nPointsAlongBeam, nPointsAlongBeam);
+
+	//second pipe
+	if (nPipes == 2) {
+		if (!isStarted) {
+			s->SetUniform4f("u_BunchColor", 0.4f, 0.4f, 0.4f, 1.0f);
+			s->SetUniform1f("u_BunchCenter", 0.0f);
+		}
+		else { // otherwise draw some bunches
+			if (beam2 == beamType::P			|| beam2 == beamType::PBAR)		s->SetUniform4f("u_BunchColor", 0.0f, 0.8f, 1.0f, 1.0f);
+			else if (beam2 == beamType::EMINUS	|| beam2 == beamType::EPLUS)	s->SetUniform4f("u_BunchColor", 1.0f, 1.0f, 0.2f, 1.0f);
+			else if (beam2 == beamType::MUMINUS || beam2 == beamType::MUPLUS)	s->SetUniform4f("u_BunchColor", 0.8f, 0.05f, 0.05f, 1.0f);
+			else if (beam2 == beamType::PIMINUS || beam2 == beamType::PIPLUS)	s->SetUniform4f("u_BunchColor", 0.1f, 0.8f, 0.1f, 1.0f);
+			else s->SetUniform4f("u_BunchColor", 1.0f, 0.1f, 0.6f, 1.0f);
+
+			s->SetUniform1f("u_BunchCenter", bunchCenter);
+		}
+		r->Draw(*beamlineVertexArray, beamlineIB, *s, GL_LINE_STRIP, nPointsAlongBeam, nPointsAlongBeam);
+	}
 }
 
 void Beam::Start() {

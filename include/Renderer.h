@@ -1,5 +1,6 @@
 #pragma once
 #include <GL/glew.h>
+#include "include/GlobalSettings.h"
 #include "include/VertexArray.h"
 #include "include/IndexBuffer.h"
 #include "include/shader.h"
@@ -17,7 +18,7 @@ bool GLLogCall(const char* function, const char* file, int line);
 class Renderer {
 
 public:
-	Renderer(bool doDepthBuffering = true, bool doAlphaBlending = true, bool doAntiAliasing = true);
+	Renderer(bool doDepthBuffering = true, bool doAlphaBlending = true);
 	
 	void DisableDepthBuffering() const;
 	void EnableDepthBuffering() const;

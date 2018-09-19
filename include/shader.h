@@ -31,6 +31,7 @@ public:
 
 	//Set Uniforms
 
+	void SetUniform1ui(const std::string& name, unsigned int f);
 	void SetUniform1f(const std::string& name, float f);
 	void SetUniform4f(const std::string& name, float v0, float v1, float v2, float v3);
 	void SetUniform4x4f(const std::string& name, glm::mat4 values);

@@ -1,9 +1,11 @@
 #pragma once
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+#include "include/GlobalSettings.h"
 #include "include/VertexArray.h"
 #include "include/VertexBuffer.h"
 #include "include/VertexBufferLayout.h"
 #include "include/IndexBuffer.h"
-#include <GLFW/glfw3.h>
 #include <iostream>
 #include <string>
 #include <mutex>
@@ -16,6 +18,8 @@ enum beamType {
 	EPLUS,
 	MUPLUS,
 	MUMINUS,
+	PIMINUS,
+	PIPLUS,
 	D,
 	AU,
 	XE,
@@ -52,6 +56,7 @@ public:
 	inline bool		GetIsPoissonPU() { return isPoissonPU; }
 	inline bool		GetIgnore0PU() { return ignore0PU; }
 	inline bool		GetBPTXFlag() { return BPTXFlag; }
+	inline bool		GetIsStarted() { return isStarted; }
 
 	inline void SetBunchCrossingDelay(float _b) { bunchCrossingDelay = _b; }
 	inline void SetBunchSpacing(float _bunchSpacing) { bunchSpacing = _bunchSpacing;  }
@@ -112,7 +117,7 @@ private:
 	bool ignore0PU = true;
 
 	//note could optimize by suppressing the Y index here if we really needed to
-	static const unsigned int nPointsAlongBeam = 5000;
+	static const unsigned int nPointsAlongBeam = 10000;
 	float beamlineEndpoints[2 * 4 * nPointsAlongBeam];//first set of values are x,y,z,alpha points of beam 1; second set of values are x,y,z values of points of beam2
 	unsigned int beamlineIndices[2* nPointsAlongBeam];
 

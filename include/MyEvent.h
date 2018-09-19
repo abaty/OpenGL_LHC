@@ -80,6 +80,7 @@ private:
 	bool isSettingUpNextEvent;
 	bool isIndexBufferReady;
 	bool isVertexBufferReady;
+	bool isVertexBufferPart1Ready;
 	bool isVertexAttributeObjectReady;
 
 	bool doPtCut = false;

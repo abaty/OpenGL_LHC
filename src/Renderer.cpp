@@ -15,9 +15,9 @@ bool GLLogCall(const char* function, const char* file, int line) {
 	return true;
 }
 
-Renderer::Renderer(bool doDepthBuffering, bool doAlphaBlending, bool doAntiAliasing ) 
+Renderer::Renderer(bool doDepthBuffering, bool doAlphaBlending) 
 {
-	if (doAntiAliasing) GLCall(glEnable(GL_MULTISAMPLE));
+	if (settings.doAntiAliasing) GLCall(glEnable(GL_MULTISAMPLE));
 	if (doDepthBuffering) GLCall(glEnable(GL_DEPTH_TEST));
 	if (doAlphaBlending) {
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); 

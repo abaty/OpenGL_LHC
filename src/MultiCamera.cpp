@@ -134,7 +134,7 @@ int MultiCamera::getNCameras() {
 	if (mode == viewMode::FOUR_CORNERS) return 4;
 	if (mode == viewMode::ONE_LEFT_TWO_SQUARES_RIGHT_BOTTOMLEFTSPLIT ) return 4;
 	if (mode == viewMode::ONE_LEFT_TWO_SQUARES_RIGHT_BOTTOMLEFTSPLIT_ZOOM) return 4;
-
+	return 1;
 }
 
 void MultiCamera::setViewMode(viewMode _mode) {

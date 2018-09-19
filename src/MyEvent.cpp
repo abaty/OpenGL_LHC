@@ -70,6 +70,7 @@ int MyEvent::Update() {
 void MyEvent::ResetSetupBooleans() {
 	isSettingUpNextEvent = true;
 	isVertexBufferReady = false;
+	isVertexBufferPart1Ready = false;
 }
 
 //called multiple times while isSettingUpNextEvent is true
@@ -83,14 +84,26 @@ void MyEvent::SetupDraw() {
 	}
 
 	//Vertex buffer
-	if ( beamline->GetTimeSinceLastBunchCrossing() > delayTime) {
-		std::cout << "nTracks: " << nTrack[renderIndex] << std::endl;
+	if (!isVertexBufferPart1Ready) {
+		std::cout << "\nnTracks: " << nTrack[renderIndex] << std::endl;
+		trkVertexBuffer->SubData(vtxPositions[renderIndex].data(), (vtxPositions[renderIndex].size()/2) * sizeof(short), 0);
+		isVertexBufferPart1Ready = true;
+		return;
+	}
 
-		Timer time = Timer();
-		trkVertexBuffer->SubData(vtxPositions[renderIndex].data(), vtxPositions[renderIndex].size() * sizeof(short), 0);
-		glFinish();
-		std::cout << "Vtx Buffer took " << time.TimeSplit() << " s to create" << std::endl;
+	if (!isVertexBufferReady) {
+		//Timer time = Timer();
+		trkVertexBuffer->SubData(vtxPositions[renderIndex].data()+ (vtxPositions[renderIndex].size() / 2), (vtxPositions[renderIndex].size()- vtxPositions[renderIndex].size() / 2) * sizeof(short), (vtxPositions[renderIndex].size() / 2) * sizeof(short));
+		//glFinish();
+		//std::cout << "Vtx Buffer took " << time.TimeSplit() << " s to create" << std::endl;
 
+		isVertexBufferReady = true;
+
+		if (beamline->GetTimeSinceLastBunchCrossing() > delayTime) isSettingUpNextEvent = false;
+		return;
+	}
+
+	if (beamline->GetTimeSinceLastBunchCrossing() > delayTime) {
 		isSettingUpNextEvent = false;
 	}
 }

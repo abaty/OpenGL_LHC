@@ -43,7 +43,7 @@ void MCGenerator::GetBasicIsotropicEvent(std::vector< Track >& tracks) {
 	double thisDz = dz(gausGen);
 	double thisDt = dz(gausGen);
 
-	unsigned int multiplicity = (unsigned int)(2 + rand() % 5000);
+	unsigned int multiplicity = (unsigned int)(2 + rand() % 1);
 	for (unsigned int i = 0; i < multiplicity; i++) {
 		//random charge of -1 or +1
 		int charge = -1 + 2 * (rand() % 2);

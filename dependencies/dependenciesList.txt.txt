@@ -1,3 +1,5 @@
 glew 2.1.0
 glm 0.9.9.0
 GLFW 
+Pythia 8.1
+FreeType 2.9.1 (dynamic lib)
