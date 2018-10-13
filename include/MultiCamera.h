@@ -26,7 +26,7 @@ public:
 
 	std::vector< Camera > cameras;
 
-	void setViewport(unsigned int cameraNumber);
+	void setViewport(bool fullScreen, unsigned int cameraNumber);
 
 	void setFieldOfView(float FoV);
 	void setAspectRatio(float AR);

@@ -4,7 +4,9 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include "glm/glm.hpp"
+#include "glm/gtc/type_ptr.hpp"
 #include "include/Renderer.h"
+#include "include/shader.h"
 #include <string>
 #include <map>
 #include <iostream>
@@ -18,10 +20,17 @@ struct Character {
 
 class Font {
 public:
-	Font(int screenWidth, int screenHeight, std::string font = "resources/Fonts/arial.ttf");
+	Font(int screenWidth, int screenHeight, int _fontHeight ,std::string font = "resources/Fonts/arial.ttf");
 	void UpdateScreenSize(int screenWidth, int screenHeight);
+	void RenderText(Shader *s, std::string text, GLfloat x, GLfloat y, GLfloat scale, glm::vec3 color);
 
+	inline int getFontHeight() { return fontHeight; }
 private:
 	std::map<GLchar, Character> characters;
 	glm::mat4 fontProjection;
+
+	GLuint VAO;
+	GLuint VBO;
+
+	int fontHeight;
 };

@@ -23,8 +23,11 @@ MultiCamera::MultiCamera(unsigned int _width, unsigned int _height, glm::vec3 in
 	mode = viewMode::ONE_SCREEN;
 }
 
-void MultiCamera::setViewport(unsigned int cameraNumber) {
-	if (mode == viewMode::ONE_SCREEN)	GLCall(glViewport(0, 0, width, height));
+void MultiCamera::setViewport(bool fullScreen, unsigned int cameraNumber) {
+	if (mode == viewMode::ONE_SCREEN || fullScreen) {
+		GLCall(glViewport(0, 0, width, height));
+		return;
+	}
 	
 	if (mode == viewMode::FOUR_CORNERS) {
 		if (cameraNumber > getNCameras()) {
@@ -43,6 +46,7 @@ void MultiCamera::setViewport(unsigned int cameraNumber) {
 		if (cameraNumber == 3) {
 			GLCall(glViewport(width / 2, 0, width / 2, height / 2));
 		}
+		return;
 	}
 
 	if (mode == viewMode::ONE_LEFT_TWO_SQUARES_RIGHT) {
@@ -59,6 +63,7 @@ void MultiCamera::setViewport(unsigned int cameraNumber) {
 		if (cameraNumber == 2) {
 			GLCall(glViewport(width - height / 2, 0, height / 2, height / 2));
 		}
+		return;
 	}
 	
 	if (mode == viewMode::ONE_LEFT_TWO_SQUARES_RIGHT_BOTTOMLEFTSPLIT || mode == viewMode::ONE_LEFT_TWO_SQUARES_RIGHT_BOTTOMLEFTSPLIT_ZOOM) {
@@ -78,6 +83,7 @@ void MultiCamera::setViewport(unsigned int cameraNumber) {
 		if (cameraNumber == 3) {
 			GLCall(glViewport(width - height / 2, 0, height / 2, height / 4));
 		}
+		return;
 	}
 
 }

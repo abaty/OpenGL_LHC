@@ -14,12 +14,13 @@ public:
 
 	//FPS counter
 	bool doFPS = true;
-	void getFPS();
+	float getFPS(bool doMSPerFrame = false);
 
 private:
 	//for FPS counter
 	int nFrames = 0;
 	double lastTime = 0;
+	float FPS = 0;
 };
 
 extern GlobalSettings settings;

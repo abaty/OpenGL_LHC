@@ -5,6 +5,8 @@ different types of pythia processes
 
 maybe there is some issue w/ setting the positoin of camera 0 in the multicamera?
 
+might have to address size of text in consistent way later to handle screen resizes
+
 
 
                             OLD IDEAS

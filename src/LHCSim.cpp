@@ -44,7 +44,7 @@ int main(void)
 	/* Create a windowed mode window and its OpenGL context */
 	int aspectRatioX = 1280;
 	int aspectRatioY = 720;
-	GLFWwindow* window = glfwCreateWindow(aspectRatioX, aspectRatioY, "LHCSim", NULL, NULL);
+	//GLFWwindow* window = glfwCreateWindow(aspectRatioX, aspectRatioY, "LHCSim", NULL, NULL);
 
 	GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
 	const GLFWvidmode* mode = glfwGetVideoMode(primaryMonitor);
@@ -54,9 +54,9 @@ int main(void)
 	glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
 	glfwWindowHint(GLFW_SAMPLES, 4);//multisampling for anti-aliasing
 
-	//aspectRatioX = mode->width;
-	//aspectRatioY = mode->height;
-	//GLFWwindow* window = glfwCreateWindow(aspectRatioX, aspectRatioY, "LHCSim", primaryMonitor, NULL);
+	aspectRatioX = mode->width;
+	aspectRatioY = mode->height;
+	GLFWwindow* window = glfwCreateWindow(aspectRatioX, aspectRatioY, "LHCSim", primaryMonitor, NULL);
 
 	if (!window)
 	{
@@ -82,20 +82,21 @@ int main(void)
 	//multiCamera.setViewMode(viewMode::ONE_LEFT_TWO_SQUARES_RIGHT_BOTTOMLEFTSPLIT);
 	multiCamera.setViewMode(viewMode::ONE_LEFT_TWO_SQUARES_RIGHT_BOTTOMLEFTSPLIT_ZOOM);
 
-	Font arial = Font(aspectRatioX, aspectRatioY);
+	Font arial = Font(aspectRatioX, aspectRatioY, aspectRatioY/60.0);
 	Renderer renderer(true, true);
 
 	Shader shader("resources/shaders/basic.shader");
 	Shader trkShader("resources/shaders/trackShader.shader");
 	Shader beamlineShader("resources/shaders/beamline.shader");
 	Shader frameBorderShader("resources/shaders/frameBorder.shader");
+	Shader fontShader("resources/shaders/fontShader.shader");
 
 	float secondToNSConversion = 5.0f;//can think of this as an overall scale factor
 	Beam beam = Beam("LHC", 0.1f, secondToNSConversion);
 	//beam.SetIsFixedTarget(1);
 	beam.SetNPipes(2);
 	//beam.SetIsPoissonPU(false);
-	beam.SetPileup(1);
+	beam.SetPileup(2);
 	MCGenerator mcGen = MCGenerator(generatorType::PYTHIA8);
 	//MCGenerator mcGen = MCGenerator(generatorType::ISOTROPIC);
 
@@ -111,8 +112,6 @@ int main(void)
 	/* Loop until the user closes the window */
 	while (!glfwWindowShouldClose(window))
 	{
-		if (settings.doFPS) settings.getFPS();
-
 		//stuff that is done before actually rendering
 		//camera control
 		multiCamera.cameras.at(0).Rotate(0.0075f);
@@ -133,7 +132,7 @@ int main(void)
 		renderer.Clear();
 
 		for (int i = 0; i < multiCamera.getNCameras(); i++) {
-			multiCamera.setViewport(i);
+			multiCamera.setViewport(false, i);
 
 			shader.Bind();
 			shader.SetUniform4f("u_Color", 0.0f, 0.3f, 0.8f, 1.0f);
@@ -155,6 +154,14 @@ int main(void)
 
 			//draw any frame borders if needed
 			multiCamera.DrawBorders(&renderer, &frameBorderShader, i);
+		}
+
+		if (settings.doFPS) {
+			multiCamera.setViewport(true, 0);
+			glm::vec3 fontColor = glm::vec3(0.5f, 0.5f, 0.5f);
+			std::string fps = "FPS: " + std::to_string(settings.getFPS());
+			int decimalPlace = fps.find(".");
+			arial.RenderText(&fontShader, fps.substr(0,decimalPlace) , aspectRatioX*0.955, aspectRatioY-arial.getFontHeight()*1.1, 1.0 ,fontColor);
 		}
 
 		GLCall(glfwSwapBuffers(window)); 		/* Swap front and back buffers */
