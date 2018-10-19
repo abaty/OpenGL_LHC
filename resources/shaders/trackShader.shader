@@ -38,7 +38,10 @@ void main() {
 	}
 	alpha = alpha * u_alphaModifierForFade;
 
-	if      (PID - 11   < 0.01f)   inputColor = u_ColorElectron;
+	if (PID - 11 < 0.01f) {
+		inputColor = u_ColorElectron;
+		alpha = alpha * 2;//yellow is a bit hard to see when faded, so don't fade as much
+	}
 	else if (PID - 13   < 0.01f)   inputColor = u_ColorMuon;
 	else if (PID - 211  < 0.01f)   inputColor = u_ColorPion;
 	else if (PID - 321  < 0.01f)   inputColor = u_ColorKaon;

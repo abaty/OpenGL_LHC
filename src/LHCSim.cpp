@@ -15,6 +15,7 @@
 #include "include/VertexArray.h"
 #include "include/shader.h"
 #include "include/Font.h"
+#include "include/Geometry/Box3D.h"
 
 #include "include/MultiCamera.h"
 #include "include/MyEvent.h"
@@ -85,13 +86,13 @@ int main(void)
 	Font arial = Font(aspectRatioX, aspectRatioY, aspectRatioY/60.0);
 	Renderer renderer(true, true);
 
-	Shader shader("resources/shaders/basic.shader");
+	Shader boxShader("resources/shaders/geometryBox.shader");
 	Shader trkShader("resources/shaders/trackShader.shader");
 	Shader beamlineShader("resources/shaders/beamline.shader");
 	Shader frameBorderShader("resources/shaders/frameBorder.shader");
 	Shader fontShader("resources/shaders/fontShader.shader");
 
-	float secondToNSConversion = 5.0f;//can think of this as an overall scale factor
+	float secondToNSConversion = 1.0f;//can think of this as an overall scale factor
 	Beam beam = Beam("LHC", 0.1f, secondToNSConversion);
 	//beam.SetIsFixedTarget(1);
 	beam.SetNPipes(2);
@@ -108,6 +109,12 @@ int main(void)
 	unsigned int viewportSwaps = 0;
 
 	beam.Start();
+
+	Box3D b = Box3D(0.,0,0,0.1,3,3);
+	b.setMaterial(matEnum::BLACK_PLASTIC);
+	Box3D b2 = Box3D(1.2,1.2,1.2,0.01,0.1,0.1);
+	Box3D b3 = Box3D(1.5, 1.2, 1.2, 0.01, 0.1, 0.1);
+	Box3D b4 = Box3D(1.8, 1.2, 1.2, 0.01, 0.1, 0.1);
 
 	/* Loop until the user closes the window */
 	while (!glfwWindowShouldClose(window))
@@ -131,13 +138,27 @@ int main(void)
 		/* Render here */
 		renderer.Clear();
 
+		b.setOffX(multiCamera.cameras.at(0).getDistanceFromCenterOfWorld()/4.0);
+
 		for (int i = 0; i < multiCamera.getNCameras(); i++) {
 			multiCamera.setViewport(false, i);
-
-			shader.Bind();
-			shader.SetUniform4f("u_Color", 0.0f, 0.3f, 0.8f, 1.0f);
+			
+			b.setUniforms(&boxShader);
 			glm::mat4 projView = multiCamera.cameras.at(i).getProjectionViewMatrix();
-			shader.SetUniform4x4f("u_Rotation", projView);
+			boxShader.SetUniform4x4f("u_ProjView", projView);
+			boxShader.SetUniform3fv("u_light.position", multiCamera.cameras.at(i).getPosition());
+			std::vector< glm::vec3 >points;
+			points.push_back(glm::vec3(1.5,1.2,1.2));
+			points.push_back(glm::vec3(1.8, 1.2, 1.2));
+			if (b.isInside(1.2, 1.2, 1.2, 999, &points)) b.setMaterial(matEnum::RED_PLASTIC);
+			else b.setMaterial(matEnum::BLACK_PLASTIC);
+			b.Draw(&renderer, &boxShader);
+			b2.setUniforms(&boxShader);
+			b2.Draw(&renderer, &boxShader);
+			b3.setUniforms(&boxShader);
+			b3.Draw(&renderer, &boxShader);
+			b4.setUniforms(&boxShader);
+			b4.Draw(&renderer, &boxShader);
 
 			//beamline drawing
 			beamlineShader.Bind();

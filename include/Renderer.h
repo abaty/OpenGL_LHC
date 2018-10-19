@@ -29,6 +29,9 @@ public:
 	void EnableAntiAliasing() const;
 	void DisableAntiAliasing() const;
 
+	void EnableGammaCorrection() const;
+	void DisableGammaCorrection() const;
+
 	void Clear() const;
 	void Draw(const VertexArray& va, const IndexBuffer& ib, const Shader& shader, GLenum mode) const;
 	void Draw(const VertexArray& va, const IndexBuffer& ib, const Shader& shader, GLenum mode, 

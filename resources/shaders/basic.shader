@@ -19,4 +19,5 @@ in float z;
 
 void main(){
     color = u_Color;
+	color.r = 4*z*z;
 };

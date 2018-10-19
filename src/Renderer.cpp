@@ -24,6 +24,7 @@ Renderer::Renderer(bool doDepthBuffering, bool doAlphaBlending)
 		glEnable(GL_BLEND); 
 		glClearColor(0.0, 0.0, 0.0, 0.0);
 	}
+	EnableGammaCorrection();
 }
 
 void Renderer::DisableDepthBuffering() const {
@@ -48,6 +49,14 @@ void Renderer::EnableAntiAliasing() const {
 
 void Renderer::DisableAntiAliasing() const {
 	GLCall(glDisable(GL_MULTISAMPLE));
+}
+
+void Renderer::EnableGammaCorrection() const {
+	GLCall(glEnable(GL_FRAMEBUFFER_SRGB));
+}
+
+void Renderer::DisableGammaCorrection() const {
+	GLCall(glDisable(GL_FRAMEBUFFER_SRGB));
 }
 
 void Renderer::Draw(const VertexArray& va, const IndexBuffer& ib, const Shader& shader, GLenum mode) const {

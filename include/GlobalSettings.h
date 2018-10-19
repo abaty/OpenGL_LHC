@@ -11,6 +11,7 @@ public:
 
 	//Drawing settings
 	bool doDrawBeamline = true;
+	bool doDrawDetectors = true;
 
 	//FPS counter
 	bool doFPS = true;

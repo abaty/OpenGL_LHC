@@ -168,7 +168,7 @@ void Beam::Draw(Renderer* r, Shader* s) {
 		
 		s->SetUniform1f("u_BunchCenter", -bunchCenter);
 	}
-	s->SetUniform4f("u_PipeColor", 0.4f, 0.4f, 0.4f, 1.0f);
+	s->SetUniform4f("u_PipeColor", 0.2f, 0.2f, 0.2f, 1.0f);
 
 	s->SetUniform1f("u_BunchSpacing", bunchSpacing * SPEED_OF_LIGHT_M_PER_NS);
 	s->SetUniform1f("u_2BunchLengthSquared", (float)2*(bunchLength/100.0f)*(bunchLength/100.0f));//denominator of a gaussian

@@ -109,10 +109,10 @@ void MyEvent::SetupDraw() {
 }
 
 void MyEvent::Draw(Renderer* r, Shader* s) {
-	GLCall(glLineWidth(2));
+	GLCall(glLineWidth(1));
 	s->Bind();
 	s->SetUniform1f("u_fractionOfPropagationTimeElapsed", (float)(timeSinceEventStart) / (float)(animationTime));
-	s->SetUniform1f("u_minAlpha", 0.5f);
+	s->SetUniform1f("u_minAlpha", 0.25f);
 	s->SetUniform1f("u_pointsOnTrack", (float)nTimeIntervals);
 	s->SetUniform1f("u_nPointsOfGradient", 0.025f * nTimeIntervals);
 	s->SetUniform1f("u_alphaModifierForFade", getAlphaModiferForFade());
@@ -121,7 +121,7 @@ void MyEvent::Draw(Renderer* r, Shader* s) {
 	s->SetUniform4f("u_ColorPion", 0.1f, 0.8f, 0.1f, 0.0f);     //pion
 	s->SetUniform4f("u_ColorKaon", 0.6f, 0.2f, 1.0f, 0.0f);     //kaon
 	s->SetUniform4f("u_ColorProton", 0.0f, 0.8f, 1.0f, 0.0f);   //proton
-	s->SetUniform4f("u_ColorElectron", 1.0f, 1.0f, 0.2f, 0.0f); //electron
+	s->SetUniform4f("u_ColorElectron", 1.0f, 0.8f, 0.0f, 0.0f); //electron
 	s->SetUniform4f("u_ColorMuon", 0.8f, 0.05f, 0.05f, 0.0f);   //muon
 	s->SetUniform4f("u_ColorDefault", 1.0f, 1.0f, 1.0f, 0.0f);  //other
 

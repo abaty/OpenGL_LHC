@@ -33,8 +33,11 @@ public:
 
 	void SetUniform1ui(const std::string& name, unsigned int f);
 	void SetUniform1f(const std::string& name, float f);
+	void SetUniform3fv(const std::string& name, glm::vec3 values);
+	void SetUniform3f(const std::string& name, float f1, float f2, float f3);
 	void SetUniform4f(const std::string& name, float v0, float v1, float v2, float v3);
 	void SetUniform4x4f(const std::string& name, glm::mat4 values);
+	void SetUniform3x3f(const std::string& name, glm::mat3 values);
 	unsigned int GetRendererID() { return m_RendererID; }
 
 };
