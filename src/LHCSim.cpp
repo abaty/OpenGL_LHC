@@ -110,11 +110,11 @@ int main(void)
 
 	beam.Start();
 
-	Box3D b = Box3D(0.,0,0,0.1,3,3);
+	Box3D b = Box3D(0.0f,0.0f,0.0f,0.1f,3.0f,3.0f);
 	b.setMaterial(matEnum::BLACK_PLASTIC);
-	Box3D b2 = Box3D(1.2,1.2,1.2,0.01,0.1,0.1);
-	Box3D b3 = Box3D(1.5, 1.2, 1.2, 0.01, 0.1, 0.1);
-	Box3D b4 = Box3D(1.8, 1.2, 1.2, 0.01, 0.1, 0.1);
+	Box3D b2 = Box3D(1.2f,1.2f,1.2f,0.01f,0.1f,0.1f);
+	Box3D b3 = Box3D(1.5f, 1.2f, 1.2f, 0.01f, 0.1f, 0.1f);
+	Box3D b4 = Box3D(1.8f, 1.2f, 1.2f, 0.01f, 0.1f, 0.1f);
 
 	/* Loop until the user closes the window */
 	while (!glfwWindowShouldClose(window))
@@ -138,7 +138,7 @@ int main(void)
 		/* Render here */
 		renderer.Clear();
 
-		b.setOffX(multiCamera.cameras.at(0).getDistanceFromCenterOfWorld()/4.0);
+		b.setOffX((float)multiCamera.cameras.at(0).getDistanceFromCenterOfWorld()/4.0);
 
 		for (int i = 0; i < multiCamera.getNCameras(); i++) {
 			multiCamera.setViewport(false, i);
@@ -147,10 +147,8 @@ int main(void)
 			glm::mat4 projView = multiCamera.cameras.at(i).getProjectionViewMatrix();
 			boxShader.SetUniform4x4f("u_ProjView", projView);
 			boxShader.SetUniform3fv("u_light.position", multiCamera.cameras.at(i).getPosition());
-			std::vector< glm::vec3 >points;
-			points.push_back(glm::vec3(1.5,1.2,1.2));
-			points.push_back(glm::vec3(1.8, 1.2, 1.2));
-			if (b.isInside(1.2, 1.2, 1.2, 999, &points)) b.setMaterial(matEnum::RED_PLASTIC);
+
+			if (b.isInside(1.2, 1.2, 1.2, 0)==1) b.setMaterial(matEnum::RED_PLASTIC);
 			else b.setMaterial(matEnum::BLACK_PLASTIC);
 			b.Draw(&renderer, &boxShader);
 			b2.setUniforms(&boxShader);
@@ -182,7 +180,7 @@ int main(void)
 			glm::vec3 fontColor = glm::vec3(0.5f, 0.5f, 0.5f);
 			std::string fps = "FPS: " + std::to_string(settings.getFPS());
 			int decimalPlace = fps.find(".");
-			arial.RenderText(&fontShader, fps.substr(0,decimalPlace) , aspectRatioX*0.955, aspectRatioY-arial.getFontHeight()*1.1, 1.0 ,fontColor);
+			arial.RenderText(&fontShader, fps.substr(0,decimalPlace) , aspectRatioX*0.955f, aspectRatioY-arial.getFontHeight()*1.1f, 1.0f ,fontColor);
 		}
 
 		GLCall(glfwSwapBuffers(window)); 		/* Swap front and back buffers */

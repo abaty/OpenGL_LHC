@@ -7,7 +7,7 @@ maybe there is some issue w/ setting the positoin of camera 0 in the multicamera
 
 might have to address size of text in consistent way later to handle screen resizes
 
-Box3D collision detection only supports checking points right now, maybe extend later to spheres or something else?
+implement bounding spheres check for individual triangles
 
                             OLD IDEAS
 --------------------------------------------------------------------------

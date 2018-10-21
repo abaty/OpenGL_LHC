@@ -1,6 +1,7 @@
 #pragma once
 #include "glm/glm.hpp"
 #include "include/Geometry/Materials.h"
+#include "include/Geometry/Polygon.h"
 #include "include/VertexArray.h"
 #include "include/VertexBuffer.h"
 #include "include/VertexBufferLayout.h"
@@ -53,8 +54,8 @@ public:
 	matEnum getMaterial() { return boxMaterial.getMatEnum(); };
 
 	//collision detection
-	bool isInside(float x, float y, float z, float R = 0, std::vector< glm::vec3 >* points = NULL, glm::mat4 preTransform = glm::mat4(1.0));
-	bool isInside(glm::vec3 v, float R = 0, std::vector< glm::vec3 >* points = NULL, glm::mat4 preTransform = glm::mat4(1.0));
+	int isInside(float x, float y, float z, float R = 0, std::vector< Polygon >* polys = NULL, glm::mat4 preTransform = glm::mat4(1.0));
+	int isInside(glm::vec3 v, float R = 0, std::vector< Polygon >* polys = NULL, glm::mat4 preTransform = glm::mat4(1.0));
 	float getCollisionSphereRadius() { return sphereRadius; };
 	glm::vec3 getCollisionSphereCenter() { return sphereCenter; };
 
@@ -64,8 +65,7 @@ public:
 	VertexBuffer *boxVertexBuffer;
 
 private:
-
-	glm::vec3 color;
+	std::vector< Polygon > polygons;
 
 	//things for offset matrix
 	float offset[3] = { 0.0f, 0.0f, 0.0f };

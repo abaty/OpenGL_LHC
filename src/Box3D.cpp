@@ -3,61 +3,71 @@
 Box3D::Box3D(float x, float y, float z, float Lx, float Ly, float Lz) {
 	boxBufferLayout.Push<float>(3);
 	boxBufferLayout.Push<float>(3);
-	//hardcode a cube w/ normals
-	float positions[6 * 6 * 6] = {
-		-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-		0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-		0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-		0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-		-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-		-0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
 
-		-0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-		0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-		0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-		0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-		-0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-		-0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+	glm::vec3 c = glm::vec3(0);//center of object
 
-		-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-		-0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-		-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-		-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-		-0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-		-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-
-		0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
-		0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-		0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-		0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-		0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
-		0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
-
-		-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
-		0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
-		0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-		0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-		-0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-		-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
-
--0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
-0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f,
-0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
-0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f,
--0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
--0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f
+	std::vector< glm::vec3 > side[6];
+	side[0] = {
+		glm::vec3(-0.5f, -0.5f, -0.5f),
+		glm::vec3(0.5f, -0.5f, -0.5f),
+		glm::vec3(0.5f, 0.5f, -0.5f),
+		glm::vec3(-0.5f, 0.5f, -0.5f)
 	};
+	polygons.push_back(Polygon(side[0], c));
 
-	boxVertexBuffer = new VertexBuffer(positions, 6 * 6 * 6 * sizeof(float));
-	boxVertexArray.AddBuffer(*boxVertexBuffer, boxBufferLayout);
+	side[1] = {
+		glm::vec3(-0.5f, -0.5f,  0.5f),
+		glm::vec3(0.5f, -0.5f,  0.5f),
+		glm::vec3(0.5f,  0.5f,  0.5f),
+		glm::vec3(-0.5f,  0.5f,  0.5f)
+	};
+	polygons.push_back(Polygon(side[1], c));
 
-	//uniforms
-	setOffXYZ(x, y, z);
-	setDimXYZ(Lx, Ly, Lz);
-	setRotXYZ(0, 0, 0);
+	side[2] = {
+		glm::vec3(-0.5f,  0.5f,  0.5f),
+		glm::vec3(-0.5f,  0.5f, -0.5f),
+		glm::vec3(-0.5f, -0.5f, -0.5f),
+		glm::vec3(-0.5f, -0.5f,  0.5f)
+	};
+	polygons.push_back(Polygon(side[2], c));
 
-	//material
-	boxMaterial = Material(matEnum::RED_PLASTIC);
+	side[3] = {
+		glm::vec3(0.5f,  0.5f,  0.5f),
+		glm::vec3(0.5f,  0.5f, -0.5f),
+		glm::vec3(0.5f, -0.5f, -0.5f),
+		glm::vec3(0.5f, -0.5f,  0.5f)
+	};
+	polygons.push_back(Polygon(side[3], c));
+
+	side[4] = {
+		glm::vec3(-0.5f, -0.5f, -0.5f),
+		glm::vec3(0.5f, -0.5f, -0.5f),
+		glm::vec3(0.5f, -0.5f,  0.5f),
+		glm::vec3(-0.5f, -0.5f,  0.5f)
+	};
+	polygons.push_back(Polygon(side[4], c));
+
+	side[5] = {
+		glm::vec3(-0.5f, 0.5f, -0.5f),
+		glm::vec3(0.5f, 0.5f, -0.5f),
+		glm::vec3(0.5f, 0.5f, 0.5f),
+		glm::vec3(-0.5f, 0.5f, 0.5f)
+	};
+	polygons.push_back(Polygon(side[5], c));
+
+	std::vector< float > positions;
+	for (unsigned int i = 0; i < polygons.size(); i++) polygons[i].addBuffer(&positions, true);
+
+boxVertexBuffer = new VertexBuffer(positions.data(), positions.size() * sizeof(float));
+boxVertexArray.AddBuffer(*boxVertexBuffer, boxBufferLayout);
+
+//uniforms
+setOffXYZ(x, y, z);
+setDimXYZ(Lx, Ly, Lz);
+setRotXYZ(0, 0, 0);
+
+//material
+boxMaterial = Material(matEnum::RED_PLASTIC);
 }
 
 Box3D::~Box3D() {
@@ -121,33 +131,53 @@ void Box3D::updateNormalMatrix() {
 	normalMatrix = glm::mat3(glm::transpose(glm::inverse(offsetMatrix*rotationMatrix*scalingMatrix)));
 }
 
-bool Box3D::isInside(float x, float y, float z, float R, std::vector< glm::vec3 >* points, glm::mat4 preTransform) {
-	return isInside(glm::vec3(x, y, z), R, points, preTransform);
+int Box3D::isInside(float x, float y, float z, float R, std::vector< Polygon >* polys, glm::mat4 preTransform) {
+	return isInside(glm::vec3(x, y, z), R, polys, preTransform);
 }
 
 //checks if any part of a sphere of radius R is inside the sphere containing the object
 //R=0 corresponds to checking if a point is inside the sphere containing the object
 //if one supplies a preTransform matrix, the points in the points vector are transformed by that first before checking
 //this allows one to supply points in model coordinates of 1 model, transform to world coordinates and back to model coordinates of object 2, where checking overlaps is easy
-bool Box3D::isInside(glm::vec3 v, float R, std::vector< glm::vec3 >* points, glm::mat4 preTransform) {
+
+//returns 0 if not inside, 1 if IS inside, -1 is undecided
+int Box3D::isInside(glm::vec3 v, float R, std::vector< Polygon >* polys, glm::mat4 preTransform) {
 	//do quick check with sphere radius before doing matrix transform
-	if (glm::distance(v, sphereCenter) > sphereRadius + R) return false;
+	//can only determine if the two bounding spheres don't touch
+	if (glm::distance(v, sphereCenter) > sphereRadius + R) return 0;
 
 	//do a more indepth check of the point given
 	glm::vec3 transformedV = inverseMatrix*glm::vec4(v, 1.0);
-	if (insideBounds(transformedV)) return true;
+	if (insideBounds(transformedV)) {
+		if (fabs(R) < 0.00001f) return 1;//if we were just checking the point, it is not inside, othersise we are still not sure
+	}
 
-	//if we got a list of points, check all those rigorously
-	if (points != NULL) {
+	//if we got a list of polygons, check all those rigorously
+	//this either returns 1 or 0 because it checks everything
+	if (polys != NULL) {
 		glm::mat4 netTransform = inverseMatrix*preTransform;
-		for (auto i = 0; i < points->size(); ++i){
-			glm::vec3 transformedV = netTransform*glm::vec4((*points)[i], 1.0);
-			if (insideBounds(transformedV)) return true;
+		//loop over polygons
+		for (size_t i = 0; i < polys->size(); ++i) {
+			Polygon poly = polys->at(i);
+
+			//quick check at polygon level before checking all triangles
+			if (glm::distance(poly.getCollisionSphereCenter(), sphereCenter) > sphereRadius + poly.getScaledCollisionSphereRadius(sphereCenter)) continue;
+
+			//loop over triangles making up the polygon
+			for (size_t j = 0; j < poly.polygonTriangles.size(); j++){
+
+				//loop over points in the triangle
+				for (unsigned int k = 0; k < 3; k++) {
+					glm::vec3 transformedV = netTransform*glm::vec4(poly.polygonTriangles[j].getPoint(k), 1.0);
+					if (insideBounds(transformedV)) return 1;
+				}
+			}
 		}
+		return 0;
 	}
 	//finished with rigorous check
 
-	return false;
+	return -1;
 }
 
 bool Box3D::insideBounds(glm::vec3 v) {
@@ -159,7 +189,7 @@ void Box3D::updateSphereCenter() {
 }
 
 void Box3D::updateSphereRadius() {
-	sphereRadius = pow(scale[0] * scale[0] + scale[1] * scale[1] + scale[2] * scale[2], 0.5) / 2.0;
+	sphereRadius = (float)pow(scale[0] * scale[0] + scale[1] * scale[1] + scale[2] * scale[2], 0.5) / 2.0;
 }
 
 void Box3D::setDimX(float f) {
