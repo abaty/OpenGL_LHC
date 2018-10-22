@@ -1,13 +1,17 @@
 #pragma once
 /*
 
-different types of pythia processes
+Implement tubes/cylinders/pipes
 
-maybe there is some issue w/ setting the positoin of camera 0 in the multicamera?
+implement some way of making tubes/shapes with varying crosssectional shapes
+
+Work on prism3D for different shapes on each end (gives slightly strange behavior now)
+
+different types of pythia processes
 
 might have to address size of text in consistent way later to handle screen resizes
 
-implement bounding spheres check for individual triangles
+triangle vtx info is stored in Triangle and polygon classes both, if memory is an issue maybe remove info from Triangle class somehow? (remove triangle class entirely?)
 
                             OLD IDEAS
 --------------------------------------------------------------------------

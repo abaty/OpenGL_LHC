@@ -16,6 +16,8 @@
 #include "include/shader.h"
 #include "include/Font.h"
 #include "include/Geometry/Box3D.h"
+#include "include/Geometry/Prism3D.h"
+#include "include/Geometry/PolygonBuilder.h"
 
 #include "include/MultiCamera.h"
 #include "include/MyEvent.h"
@@ -116,6 +118,9 @@ int main(void)
 	Box3D b3 = Box3D(1.5f, 1.2f, 1.2f, 0.01f, 0.1f, 0.1f);
 	Box3D b4 = Box3D(1.8f, 1.2f, 1.2f, 0.01f, 0.1f, 0.1f);
 
+	PolygonBuilder pb = PolygonBuilder();
+	Prism3D prism = Prism3D(pb.nGon(100,0.5), pb.nGonPhiOffset(100, 0.5), -1.0, -1.0, -1.0, 0.3f, 0.6f, 2.0f);
+
 	/* Loop until the user closes the window */
 	while (!glfwWindowShouldClose(window))
 	{
@@ -157,6 +162,8 @@ int main(void)
 			b3.Draw(&renderer, &boxShader);
 			b4.setUniforms(&boxShader);
 			b4.Draw(&renderer, &boxShader);
+			prism.setUniforms(&boxShader);
+			prism.Draw(&renderer, &boxShader);
 
 			//beamline drawing
 			beamlineShader.Bind();
