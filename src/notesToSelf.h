@@ -1,11 +1,11 @@
 #pragma once
 /*
 
-Implement tubes/cylinders/pipes
+Fix collision detector for different 3D objects, and then find a solution for tubes
+		First: Implement Axis-aligned bounding boxes (get rid of spheres)
+		Second: Implement method that checks point by point if 1 convex polyhedron is in another
+		Third: Do hollows by requiring Second + not inside hollow area?
 
-implement some way of making tubes/shapes with varying crosssectional shapes
-
-Work on prism3D for different shapes on each end (gives slightly strange behavior now)
 
 different types of pythia processes
 

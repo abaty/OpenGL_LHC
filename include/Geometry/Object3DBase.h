@@ -37,6 +37,10 @@ class Object3DBase {
 		void setSphereCenter(glm::vec3 center) { sphereCenter = center; };
 		void setSphereRadius(float r) { sphereRadius = r; };
 
+		//stuff for hollow objects (tubes, etc)
+		bool isHollow = false;
+		virtual bool isInsideHollow(glm::vec3 v, float R, std::vector< myPolygon >* polys, glm::mat4 preTransform);
+
 		//functions for setting dimensions
 		void setDimX(float f);
 		void setDimY(float f);
@@ -71,6 +75,7 @@ class Object3DBase {
 		glm::mat4 getRotationMatrix() { return rotationMatrix; };
 
 		//other matrices
+		glm::mat3 getTransformationMatrix() { return transformationMatrix;  };
 		glm::mat4 getNormalMatrix() { return normalMatrix; };
 		glm::mat4 getInverseMatrix() { return inverseMatrix; };
 
@@ -115,6 +120,9 @@ class Object3DBase {
 		//normal matrix for transforming normals to world coordinates
 		glm::mat3 normalMatrix;
 		void updateNormalMatrix();
+
+		glm::mat4 transformationMatrix;
+		void updateTransformationMatrix();
 
 		//stuff for collision detection
 		//define a sphere that contains all the points of the object

@@ -23,6 +23,8 @@ int Object3DBase::isInside(glm::vec3 v, float R, std::vector< myPolygon >* polys
 	//can only determine if the two bounding spheres don't touch
 	if (glm::distance(v, sphereCenter) > sphereRadius + R) return 0;
 
+	if(isHollow && isInsideHollow(v, R, polys, preTransform)) return 0;
+
 	//do a more indepth check of the point given
 	glm::vec3 transformedV = getInverseMatrix()*glm::vec4(v, 1.0);
 	if (insideBounds(transformedV)) {
@@ -39,7 +41,6 @@ int Object3DBase::isInside(glm::vec3 v, float R, std::vector< myPolygon >* polys
 
 			//quick check at polygon level before checking all triangles
 			if (glm::distance(poly.getCollisionSphereCenter(), sphereCenter) > sphereRadius + poly.getScaledCollisionSphereRadius(sphereCenter)) continue;
-
 			for (size_t j = 0; j < poly.vtxs.size(); j++) {
 				glm::vec3 transformedV = netTransform*glm::vec4(poly.vtxs[j], 1.0);
 				if (insideBounds(transformedV)) return 1;
@@ -52,6 +53,17 @@ int Object3DBase::isInside(glm::vec3 v, float R, std::vector< myPolygon >* polys
 	return -1;
 }
 
+bool Object3DBase::insideBounds(glm::vec3 v) {
+	for (size_t i = 0; i < polygons.size(); i++) {
+		if (glm::dot(polygons[i].getNormal(), polygons[i].vtxs[0] - v) < 0) return false;
+	}
+	return true;
+}
+
+//to be overridden in other classes
+bool Object3DBase::isInsideHollow(glm::vec3 v, float R, std::vector< myPolygon >* polys, glm::mat4 preTransform) {
+	return false;
+}
 
 void Object3DBase::updateSphereCenter() {
 	sphereCenter = glm::vec3(offset[0], offset[1], offset[2]);
@@ -70,10 +82,12 @@ void Object3DBase::updateSphereRadius() {
 	sphereRadius = R;
 }
 
+
 void Object3DBase::updateOffsetMatrix() {
 	offsetMatrix = glm::translate(glm::mat4(1.0), glm::vec3(offset[0], offset[1], offset[2]));
 	offsetMatrixInv = glm::translate(glm::mat4(1.0), glm::vec3(-offset[0], -offset[1], -offset[2]));
 	inverseMatrix = scalingMatrixInv*rotationMatrixInv*offsetMatrixInv;
+	updateTransformationMatrix();
 	updateNormalMatrix();
 }
 
@@ -81,6 +95,7 @@ void Object3DBase::updateScalingMatrix() {
 	scalingMatrix = glm::scale(glm::vec3(scale[0], scale[1], scale[2]));
 	scalingMatrixInv = glm::scale(glm::vec3(1.0 / scale[0], 1.0 / scale[1], 1.0 / scale[2]));
 	inverseMatrix = scalingMatrixInv*rotationMatrixInv*offsetMatrixInv;
+	updateTransformationMatrix();
 	updateNormalMatrix();
 }
 
@@ -91,13 +106,17 @@ void Object3DBase::updateRotationMatrix() {
 	rotationMatrix = glm::rotate(rotation[2], z)*glm::rotate(rotation[1], y)*glm::rotate(rotation[0], x);
 	rotationMatrixInv = glm::rotate(-rotation[0], x)*glm::rotate(-rotation[1], y)*glm::rotate(-rotation[2], z);
 	inverseMatrix = scalingMatrixInv*rotationMatrixInv*offsetMatrixInv;
+	updateTransformationMatrix();
 	updateNormalMatrix();
 }
 
 void Object3DBase::updateNormalMatrix() {
-	normalMatrix = glm::mat3(glm::transpose(glm::inverse(offsetMatrix*rotationMatrix*scalingMatrix)));
+	normalMatrix = glm::mat3(glm::transpose(glm::inverse(transformationMatrix)));
 }
 
+void Object3DBase::updateTransformationMatrix() {
+	transformationMatrix = offsetMatrix*rotationMatrix*scalingMatrix;
+}
 
 void Object3DBase::setDimX(float f) {
 	scale[0] = f;
@@ -181,12 +200,7 @@ void Object3DBase::setRotXYZ(float f1, float f2, float f3) {
 	updateRotationMatrix();
 }
 
-bool Object3DBase::insideBounds(glm::vec3 v) {
-	for (size_t i = 0; i < polygons.size(); i++){
-		if (glm::dot(polygons[i].getNormal(), polygons[i].vtxs[0] - v) < 0) return false;
-	}
-	return true;
-}
+
 
 
 void Object3DBase::Draw(Renderer* r, Shader* s)

@@ -17,6 +17,8 @@
 #include "include/Font.h"
 #include "include/Geometry/Box3D.h"
 #include "include/Geometry/Prism3D.h"
+#include "include/Geometry/Extrusion3D.h"
+#include "include/Geometry/Tube3D.h"
 #include "include/Geometry/PolygonBuilder.h"
 
 #include "include/MultiCamera.h"
@@ -114,12 +116,15 @@ int main(void)
 
 	Box3D b = Box3D(0.0f,0.0f,0.0f,0.1f,3.0f,3.0f);
 	b.setMaterial(matEnum::BLACK_PLASTIC);
-	Box3D b2 = Box3D(1.2f,1.2f,1.2f,0.01f,0.1f,0.1f);
+	Box3D b2 = Box3D(1.2f,1.2f,1.2f,0.1f,0.1f,0.1f);
 	Box3D b3 = Box3D(1.5f, 1.2f, 1.2f, 0.01f, 0.1f, 0.1f);
-	Box3D b4 = Box3D(1.8f, 1.2f, 1.2f, 0.01f, 0.1f, 0.1f);
+	Box3D b4 = Box3D(0.3f, 0.0f, 0.0f, 0.01f, 0.1f, 0.1f);
 
 	PolygonBuilder pb = PolygonBuilder();
-	Prism3D prism = Prism3D(pb.nGon(100,0.5), pb.nGonPhiOffset(100, 0.5), -1.0, -1.0, -1.0, 0.3f, 0.6f, 2.0f);
+	//Prism3D prism = Prism3D(pb.nGon(4,0.5), pb.nGon(4,-0.5), 2, -1.0, -1.0, -1.0, 0.3f, 0.6f, 2.0f);
+	//Prism3D prism = Prism3D(pb.nGon(100,0.5), pb.nGon(100, 0.5), 2, -1.0, -1.0, -1.0, 0.3f, 0.6f, 2.0f);
+	//Extrusion3D prism = Extrusion3D(pb.nGon(30,0.5,0.2), pb.nGon(30,-0.5,1.2), 5, 2, -1.0, -1.0, -1.0, 1.0f, 1.0f, 1.0f);
+	Tube3D prism = Tube3D(pb.nGon(30, 0.5, 0.8), pb.nGon(30, -0.5, 1.2), 1, 2, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.5f);
 
 	/* Loop until the user closes the window */
 	while (!glfwWindowShouldClose(window))
@@ -144,6 +149,7 @@ int main(void)
 		renderer.Clear();
 
 		b.setOffX((float)multiCamera.cameras.at(0).getDistanceFromCenterOfWorld()/4.0);
+		b4.setOffX((float)multiCamera.cameras.at(0).getDistanceFromCenterOfWorld() / 50.0);
 
 		for (int i = 0; i < multiCamera.getNCameras(); i++) {
 			multiCamera.setViewport(false, i);
@@ -153,8 +159,11 @@ int main(void)
 			boxShader.SetUniform4x4f("u_ProjView", projView);
 			boxShader.SetUniform3fv("u_light.position", multiCamera.cameras.at(i).getPosition());
 
-			if (b.isInside(1.2, 1.2, 1.2, 0)==1) b.setMaterial(matEnum::RED_PLASTIC);
+			if (b.isInside(1.2,1.2,1.2) == 1
+				) b.setMaterial(matEnum::RED_PLASTIC);
 			else b.setMaterial(matEnum::BLACK_PLASTIC);
+			if (prism.isInside(b4.getCollisionSphereCenter(), b4.getCollisionSphereRadius(), &(b4.polygons), b4.getTransformationMatrix()) == 1) b4.setMaterial(matEnum::CYAN_PLASTIC);
+			else b4.setMaterial(matEnum::BLACK_PLASTIC);
 			b.Draw(&renderer, &boxShader);
 			b2.setUniforms(&boxShader);
 			b2.Draw(&renderer, &boxShader);

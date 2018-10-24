@@ -1,5 +1,6 @@
 #pragma once
 #include "include/Geometry/Object3DBase.h"
+#include "include/Geometry/PolygonBuilder.h"
 
 class Prism3D : public Object3DBase {
 
@@ -8,7 +9,7 @@ public:
 	//second polygon is placed on the x- side
 	//first polygon is reused as 2nd if 2nd is not specified
 	Prism3D();
-	Prism3D(myPolygon poly1, myPolygon poly2, int axis = 2,float x = 0, float y = 0, float z = 0, float Lx = 1, float Ly = 1, float Lz = 1);
+	Prism3D(myPolygon poly1, myPolygon poly2 ,int axis = 2,float x = 0, float y = 0, float z = 0, float Lx = 1, float Ly = 1, float Lz = 1);
 	Prism3D(myPolygon poly1, int axis = 2, float x = 0, float y = 0, float z = 0, float Lx = 1, float Ly = 1, float Lz = 1) : Prism3D(poly1, poly1, axis, x, y, z, Lx, Ly, Lz) {};//calls above constructor
 	~Prism3D();
 
