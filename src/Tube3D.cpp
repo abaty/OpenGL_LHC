@@ -72,7 +72,7 @@ void Tube3D::setupBuffers(myPolygon poly1, myPolygon poly2, myPolygon poly3, myP
 Tube3D::~Tube3D() {
 	delete boxVertexBuffer;
 }
-
+/*
 //this will not work as it currently is
 bool Tube3D::insideBounds(glm::vec3 v) {
 	if (fabs(v.z) > 0.5) return false;
@@ -85,4 +85,4 @@ bool Tube3D::insideBounds(glm::vec3 v) {
 //figure out what to do here
 bool Tube3D::isInsideHollow(glm::vec3 v, float R, std::vector< myPolygon >* polys, glm::mat4 preTransform) {
 	return false;
-}
+}*/

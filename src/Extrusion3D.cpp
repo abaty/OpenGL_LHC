@@ -56,11 +56,11 @@ void Extrusion3D::setupBuffers(myPolygon poly1, myPolygon poly2, unsigned int nI
 Extrusion3D::~Extrusion3D() {
 	delete boxVertexBuffer;
 }
-
+/*
 bool Extrusion3D::insideBounds(glm::vec3 v) {
 	if (fabs(v.z) > 0.5) return false;
 	for (size_t i = 0; i < polygons.size(); i++) {
 		if (glm::dot(polygons[i].getNormal(), polygons[i].vtxs[0] - v) < 0) return false;
 	}
 	return true;
-}
+}*/

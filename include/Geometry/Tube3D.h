@@ -16,8 +16,8 @@ public:
 
 	void setupBuffers(myPolygon poly1, myPolygon poly2, myPolygon poly3, myPolygon poly4, unsigned int nInterpolations = 0);
 
-	bool insideBounds(glm::vec3 v);
-	bool isInsideHollow(glm::vec3 v, float R, std::vector< myPolygon >* polys, glm::mat4 preTransform);
+	//bool insideBounds(glm::vec3 v);
+	//bool isInsideHollow(glm::vec3 v, float R, std::vector< myPolygon >* polys, glm::mat4 preTransform);
 
 private:
 	//this is not displayed but is used for collision detection

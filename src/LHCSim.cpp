@@ -116,9 +116,11 @@ int main(void)
 
 	Box3D b = Box3D(0.0f,0.0f,0.0f,0.1f,3.0f,3.0f);
 	b.setMaterial(matEnum::BLACK_PLASTIC);
+	b.setRotZ(0.2);
 	Box3D b2 = Box3D(1.2f,1.2f,1.2f,0.1f,0.1f,0.1f);
-	Box3D b3 = Box3D(1.5f, 1.2f, 1.2f, 0.01f, 0.1f, 0.1f);
+	Box3D b3 = Box3D(1.0f, 1.0f, 1.0f, 2.5f, 0.1f, 0.1f);
 	Box3D b4 = Box3D(0.3f, 0.0f, 0.0f, 0.01f, 0.1f, 0.1f);
+	b4.setMaterial(matEnum::JADE);
 
 	PolygonBuilder pb = PolygonBuilder();
 	//Prism3D prism = Prism3D(pb.nGon(4,0.5), pb.nGon(4,-0.5), 2, -1.0, -1.0, -1.0, 0.3f, 0.6f, 2.0f);
@@ -159,10 +161,12 @@ int main(void)
 			boxShader.SetUniform4x4f("u_ProjView", projView);
 			boxShader.SetUniform3fv("u_light.position", multiCamera.cameras.at(i).getPosition());
 
-			if (b.isInside(1.2,1.2,1.2) == 1
-				) b.setMaterial(matEnum::RED_PLASTIC);
+			if (b.isInside(1.2,1.2,1.2) == 1) b.setMaterial(matEnum::RED_PLASTIC);
+			//else b.setMaterial(matEnum::BLACK_PLASTIC);
+			else if (b.isInside(&b3) ||b3.isInside(&b)) b.setMaterial(matEnum::RED_PLASTIC);
 			else b.setMaterial(matEnum::BLACK_PLASTIC);
-			if (prism.isInside(b4.getCollisionSphereCenter(), b4.getCollisionSphereRadius(), &(b4.polygons), b4.getTransformationMatrix()) == 1) b4.setMaterial(matEnum::CYAN_PLASTIC);
+			
+			if (prism.isInside(&b4)) b4.setMaterial(matEnum::CYAN_PLASTIC);
 			else b4.setMaterial(matEnum::BLACK_PLASTIC);
 			b.Draw(&renderer, &boxShader);
 			b2.setUniforms(&boxShader);

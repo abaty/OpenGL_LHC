@@ -8,6 +8,108 @@ Object3DBase::Object3DBase(){
 	setMaterial(matEnum::RED_PLASTIC);
 }
 
+bool Object3DBase::isInside(float x, float y, float z) {
+	return isInside(glm::vec3(x, y, z));
+}
+
+bool Object3DBase::isInside(glm::vec3 v) {
+	//first check if the point is in the AABB
+	//if it is not, then return false
+	if (!aabb.isInside(v)) return false;
+
+	//if it is inside the AABB we need to be more careful:
+	//check to see if the vector from the point is along the normal of the polygon
+	//THIS ASSUMES A CONVEX POLYHEDRON
+	for (size_t i = 0; i < polygons.size(); i++) {
+		//put the point into model coordinates
+		glm::vec3 vPrime = inverseMatrix * glm::vec4(v, 1.0f);
+		if (glm::dot(polygons[i].getNormal(), polygons[i].vtxs[0] - vPrime) < 0) return false;
+	}
+	return true;
+}
+
+bool Object3DBase::isInside(Object3DBase *obj) {
+	//first check if the other objects aabb is in this AABB
+	//if it is not, then return false
+	if (!this->aabb.isInside(obj->aabb)) return false;
+
+	struct C_R_I {
+		glm::vec3 center;
+		glm::vec3 normal;
+		float r;
+		size_t index;
+	};
+
+	std::vector< C_R_I > objPolys;
+
+	for (size_t a = 0; a < obj->polygons.size(); a++) {
+		myPolygon p = obj->polygons[a];
+		glm::vec3 center = obj->getTransformationMatrix() * glm::vec4( p.getCollisionSphereCenter(), 1.0f);
+		float r = p.getCollisionSphereRadius();
+		glm::vec3 n = glm::normalize(obj->getNormalMatrix() * glm::vec4(p.getNormal(), 1.0f));
+
+		//scale collision radius to the radius it should be in world coordinates (calculates 
+		float xFactor = (1-fabs(n.x))*obj->getDimX();
+		float yFactor = (1-fabs(n.y))*obj->getDimY();
+		float zFactor = (1-fabs(n.z))*obj->getDimZ();
+		float scaleFactor = glm::length(glm::vec3(xFactor, yFactor, zFactor));
+		r *= scaleFactor;
+
+		C_R_I temp = { center, n, r, a };
+		objPolys.push_back(temp);
+	}
+
+	std::vector< C_R_I > thisPolys;
+	for (size_t a = 0; a < polygons.size(); a++) {
+		myPolygon p = polygons[a];
+		glm::vec3 center = getTransformationMatrix() * glm::vec4(p.getCollisionSphereCenter(), 1.0f);
+		float r = p.getCollisionSphereRadius();
+		glm::vec3 n = glm::normalize(getNormalMatrix() * glm::vec4(p.getNormal(), 1.0f));
+
+		//scale collision radius to the radius it should be in world coordinates (calculates 
+		float xFactor = (1 - fabs(n.x))*getDimX();
+		float yFactor = (1 - fabs(n.y))*getDimY();
+		float zFactor = (1 - fabs(n.z))*getDimZ();
+		float scaleFactor = glm::length(glm::vec3(xFactor, yFactor, zFactor));
+		r *= scaleFactor;
+
+		C_R_I temp = { center, n, r, a };
+		thisPolys.push_back(temp);
+	}
+
+	for (size_t i = 0; i < objPolys.size(); i++) {
+		for (size_t j = 0; j < thisPolys.size(); j++) {
+			glm::vec3 diff = objPolys[i].center - thisPolys[j].center;
+			float radius = (1 - fabs(glm::dot(diff, objPolys[i].normal)*objPolys[i].r)) +
+				(1 - fabs(glm::dot(diff, thisPolys[j].normal)*thisPolys[j].r));
+			if ( glm::length(diff) > radius) continue;
+
+			//check individual polygons here
+
+		}
+	}
+
+	//if it is inside the AABB we need to be more careful:
+	//check to see if the vector from the point is along the normal of the polygon
+	//THIS ASSUMES THIS THE CALLING OBJECT (THIS->) IS A CONVEX POLYHEDRON
+
+	//loop over all vertices in the polygons of *obj and check if each of those points is in (this->)
+	/*for (size_t a = 0; a < obj->polygons.size(); a++) {
+		for (size_t b = 0; b < obj->polygons[a].vtxs.size(); b++) {
+			glm::vec3 v = obj->polygons[a].vtxs[b];
+
+			for (size_t i = 0; i < polygons.size(); i++) {
+				//put the point into model coordinates
+				glm::vec3 vPrime = inverseMatrix * glm::vec4(v, 1.0f);
+				if (glm::dot(polygons[i].getNormal(), polygons[i].vtxs[0] - vPrime) < 0) return false;
+			}
+		}
+	}*/
+
+	return true;
+}
+
+/*
 int Object3DBase::isInside(float x, float y, float z, float R, std::vector< myPolygon >* polys, glm::mat4 preTransform) {
 	return isInside(glm::vec3(x, y, z), R, polys, preTransform);
 }
@@ -82,6 +184,19 @@ void Object3DBase::updateSphereRadius() {
 	sphereRadius = R;
 }
 
+*/
+
+void Object3DBase::updateAABB() {
+	for (size_t i = 0; i < polygons.size(); ++i) {
+		myPolygon poly = polygons.at(i);
+		for (size_t j = 0; j < poly.vtxs.size(); j++) {
+			glm::vec3 worldCoordinates = transformationMatrix * glm::vec4(poly.vtxs[j], 1.0f);
+			//reset to first vertex first
+			if (i == 0 && j == 0) aabb.reset(worldCoordinates);
+			else aabb.update(worldCoordinates);
+		}
+	}
+}
 
 void Object3DBase::updateOffsetMatrix() {
 	offsetMatrix = glm::translate(glm::mat4(1.0), glm::vec3(offset[0], offset[1], offset[2]));
@@ -116,63 +231,54 @@ void Object3DBase::updateNormalMatrix() {
 
 void Object3DBase::updateTransformationMatrix() {
 	transformationMatrix = offsetMatrix*rotationMatrix*scalingMatrix;
+	updateAABB();
 }
 
 void Object3DBase::setDimX(float f) {
 	scale[0] = f;
-	updateSphereRadius();
 	updateScalingMatrix();
 }
 void Object3DBase::setDimY(float f) {
 	scale[1] = f;
-	updateSphereRadius();
 	updateScalingMatrix();
 }
 void Object3DBase::setDimZ(float f) {
 	scale[2] = f;
-	updateSphereRadius();
 	updateScalingMatrix();
 }
 void Object3DBase::setDimXY(float f1, float f2) {
 	scale[0] = f1;
 	scale[1] = f2;
-	updateSphereRadius();
 	updateScalingMatrix();
 }
 void Object3DBase::setDimXYZ(float f1, float f2, float f3) {
 	scale[0] = f1;
 	scale[1] = f2;
 	scale[2] = f3;
-	updateSphereRadius();
 	updateScalingMatrix();
 }
 
 void Object3DBase::setOffX(float f) {
 	offset[0] = f;
-	updateSphereCenter();
 	updateOffsetMatrix();
 }
 void Object3DBase::setOffY(float f) {
 	offset[1] = f;
-	updateSphereCenter();
 	updateOffsetMatrix();
 }
 void Object3DBase::setOffZ(float f) {
 	offset[2] = f;
-	updateSphereCenter();
 	updateOffsetMatrix();
 }
 void Object3DBase::setOffXY(float f1, float f2) {
 	offset[0] = f1;
 	offset[1] = f2;
-	updateSphereCenter();
 	updateOffsetMatrix();
 }
 void Object3DBase::setOffXYZ(float f1, float f2, float f3) {
 	offset[0] = f1;
 	offset[1] = f2;
 	offset[2] = f3;
-	updateSphereCenter();
 	updateOffsetMatrix();
 }
 

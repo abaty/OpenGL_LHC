@@ -31,11 +31,11 @@ Box3D::Box3D(float x, float y, float z, float Lx, float Ly, float Lz) {
 Box3D::~Box3D() {
 	delete boxVertexBuffer;
 }
-
+/*
 bool Box3D::insideBounds(glm::vec3 v) {
 	return fabs(v.x) < 0.5 && fabs(v.y) < 0.5 && fabs(v.z) < 0.5;
 }
 
 void Box3D::updateSphereRadius() {
 	setSphereRadius((float)pow(getDimX() * getDimX() + getDimY() * getDimY() + getDimZ() * getDimZ(), 0.5) / 2.0);
-}
+}*/

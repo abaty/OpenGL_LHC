@@ -1,6 +1,7 @@
 #pragma once
 #pragma once
 #include "glm/glm.hpp"
+#include "include/Geometry/AABB.h"
 #include "include/Geometry/Materials.h"
 #include "include/Geometry/myPolygon.h"
 #include "include/VertexArray.h"
@@ -28,18 +29,23 @@ class Object3DBase {
 		void setUniforms(Shader * s);
 
 		//collision detection stuff
-		int isInside(float x, float y, float z, float R = 0, std::vector< myPolygon >* polys = NULL, glm::mat4 preTransform = glm::mat4(1.0));
+		AABB aabb;
+		bool isInside(float x, float y, float z);
+		bool isInside(glm::vec3 v);
+		bool isInside(Object3DBase *obj);
+
+		/*int isInside(float x, float y, float z, float R = 0, std::vector< myPolygon >* polys = NULL, glm::mat4 preTransform = glm::mat4(1.0));
 		int isInside(glm::vec3 v, float R = 0, std::vector< myPolygon >* polys = NULL, glm::mat4 preTransform = glm::mat4(1.0));
 		//helper function that checks if a point is inside the object based on it's polygons and their normals
 		virtual bool insideBounds(glm::vec3);
 		float getCollisionSphereRadius() { return sphereRadius; };
 		glm::vec3 getCollisionSphereCenter() { return sphereCenter; };
 		void setSphereCenter(glm::vec3 center) { sphereCenter = center; };
-		void setSphereRadius(float r) { sphereRadius = r; };
+		void setSphereRadius(float r) { sphereRadius = r; };*/
 
 		//stuff for hollow objects (tubes, etc)
 		bool isHollow = false;
-		virtual bool isInsideHollow(glm::vec3 v, float R, std::vector< myPolygon >* polys, glm::mat4 preTransform);
+		//virtual bool isInsideHollow(glm::vec3 v, float R, std::vector< myPolygon >* polys, glm::mat4 preTransform);
 
 		//functions for setting dimensions
 		void setDimX(float f);
@@ -96,6 +102,9 @@ class Object3DBase {
 	private:
 		unsigned int nVertices;
 
+		//collision detection
+		void updateAABB();
+
 		//things for offset matrix
 		float offset[3] = { 0.0f, 0.0f, 0.0f };
 		glm::mat4 offsetMatrix;
@@ -126,10 +135,10 @@ class Object3DBase {
 
 		//stuff for collision detection
 		//define a sphere that contains all the points of the object
-		glm::vec3 sphereCenter;
+		/*glm::vec3 sphereCenter;
 		float sphereRadius;
 		virtual void updateSphereRadius();
-		virtual void updateSphereCenter();
+		virtual void updateSphereCenter();*/
 
 		//material
 		Material boxMaterial;

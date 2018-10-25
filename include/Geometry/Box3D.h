@@ -9,8 +9,8 @@ public:
 
 private:
 	//function for updating sphere radius quickly
-	void updateSphereRadius();
+	//void updateSphereRadius();
 
 	//helper function for determining if a point is inside the model (in model coordinates)
-	bool insideBounds(glm::vec3);
+	//bool insideBounds(glm::vec3);
 };

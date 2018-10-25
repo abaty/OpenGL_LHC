@@ -1,9 +1,16 @@
 #pragma once
 /*
+//useful reference for collision
+http://www.realtimerendering.com/intersections.html
+http://web.stanford.edu/class/cs277/resources/papers/Moller1997b.pdf
+
 
 Fix collision detector for different 3D objects, and then find a solution for tubes
 		First: Implement Axis-aligned bounding boxes (get rid of spheres)
 		Second: Implement method that checks point by point if 1 convex polyhedron is in another
+
+		WORKING ON OBJECT3DBASE L85ish
+
 		Third: Do hollows by requiring Second + not inside hollow area?
 
 

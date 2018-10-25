@@ -20,6 +20,7 @@ myPolygon::myPolygon(std::vector< glm::vec3 > _vtxs, glm::vec3 interior)
 
 		polygonTriangles.push_back(t);
 
+		
 		for (size_t j = 0; j < i; j++) {
 			float d = glm::distance(vtxs.at(j), vtxs.at(i)) / 2.0;
 			if (d > sphereRadius) {

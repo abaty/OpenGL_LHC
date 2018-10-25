@@ -12,7 +12,7 @@ public:
 
 	void setupBuffers(myPolygon poly1, myPolygon poly2, unsigned int nInterpolations = 0);
 
-	bool insideBounds(glm::vec3 v);
+	//bool insideBounds(glm::vec3 v);
 private:
 	int specialFaceAxis;//x=0, y=1, z=2
 };
