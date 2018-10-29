@@ -18,8 +18,11 @@ Tube3D::Tube3D(myPolygon poly1, myPolygon poly2, unsigned int nInterpolations, i
 	if (specialFaceAxis == 0) setRotXYZ(0, 0, 0);
 	else if (specialFaceAxis == 1) setRotXYZ(0, 0, 3.14159 / 2.0);
 	else setRotXYZ(0, 3.14159 / 2.0, 0);
+
+	innerVolume = Extrusion3D(poly1, poly1, nInterpolations, 0, x , y, z, Lx, Ly, Lz);
 }
 
+//inner x+, inner x-, outer x+, outer x-
 Tube3D::Tube3D(myPolygon poly1, myPolygon poly2, myPolygon poly3, myPolygon poly4, unsigned int nInterpolations, int axis, float x, float y,
 	float z, float Lx, float Ly, float Lz)
 	:specialFaceAxis(axis)
@@ -38,6 +41,8 @@ Tube3D::Tube3D(myPolygon poly1, myPolygon poly2, myPolygon poly3, myPolygon poly
 	if (specialFaceAxis == 0) setRotXYZ(0, 0, 0);
 	else if (specialFaceAxis == 1) setRotXYZ(0, 0, 3.14159 / 2.0);
 	else setRotXYZ(0, 3.14159 / 2.0, 0);
+
+	innerVolume = Extrusion3D(poly1, poly2, nInterpolations, 0, x, y, z, Lx, Ly, Lz);
 }
 
 void Tube3D::setupBuffers(myPolygon poly1, myPolygon poly2, myPolygon poly3, myPolygon poly4, unsigned int nInterpolations) {
@@ -67,22 +72,60 @@ void Tube3D::setupBuffers(myPolygon poly1, myPolygon poly2, myPolygon poly3, myP
 	boxVertexArray.AddBuffer(*boxVertexBuffer, boxBufferLayout);
 
 	setNVertices(positions.size() / 6);
+
+	updateInnerCylinderRadius(poly1, poly2);
+}
+
+//returns true if the point is not in the model
+bool Tube3D::isInsideHollowRegion(glm::vec3 v) {
+	glm::vec3 modelPt = getInverseMatrix() * glm::vec4(v, 1.0f);
+	if (fabs(modelPt.z) > 0.5) return true;
+
+	//there is a cylinder w/ radius R(z) that is the maximum radius to still not contact the tube
+	//see if we are inside this cylinder quickly
+	float distFromZaxis = glm::length(glm::vec2(modelPt));
+	float dz = 0.5 - modelPt.z;
+	float maxAllowedDist = dz*innerCylinderRadiusMinus + (1-dz)*innerCylinderRadiusPlus;
+	if ( distFromZaxis < maxAllowedDist) return true;
+
+	if (innerVolume.isInside(modelPt)) return true;
+	return false;
 }
 
 Tube3D::~Tube3D() {
 	delete boxVertexBuffer;
 }
-/*
-//this will not work as it currently is
-bool Tube3D::insideBounds(glm::vec3 v) {
-	if (fabs(v.z) > 0.5) return false;
-	for (size_t i = 0; i < polygons.size(); i++) {
-		if (glm::dot(polygons[i].getNormal(), polygons[i].vtxs[0] - v) < 0) return false;
-	}
-	return true;
-}
 
-//figure out what to do here
-bool Tube3D::isInsideHollow(glm::vec3 v, float R, std::vector< myPolygon >* polys, glm::mat4 preTransform) {
-	return false;
-}*/
+void Tube3D::updateInnerCylinderRadius(myPolygon poly1, myPolygon poly2) {
+	innerCylinderRadiusPlus = -1;
+
+	//https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line#Another_vector_formulation
+	//calculates distance to 0,0
+	for (size_t k = 0; k < poly1.vtxs.size(); k++) {
+		size_t nextIndex = (k == poly1.vtxs.size() - 1) ? 0 : k + 1;//wrap around if needed
+
+		glm::vec3 point = poly1.vtxs[k];
+		point.z = 0.0f;
+		glm::vec3 pointNxt = poly1.vtxs[nextIndex];
+		pointNxt.z = 0.0f;
+		glm::vec3 u = glm::normalize(pointNxt - point);
+		float d = glm::length(glm::cross(u, point));
+
+		if (d > innerCylinderRadiusPlus) innerCylinderRadiusPlus = d;
+	}
+
+	//same code for minus
+	innerCylinderRadiusMinus = -1;
+	for (size_t k = 0; k < poly2.vtxs.size(); k++) {
+		size_t nextIndex = (k == poly2.vtxs.size() - 1) ? 0 : k + 1;//wrap around if needed
+
+		glm::vec3 point = poly2.vtxs[k];
+		point.z = 0.0f;
+		glm::vec3 pointNxt = poly2.vtxs[nextIndex];
+		pointNxt.z = 0.0f;
+		glm::vec3 u = glm::normalize(pointNxt - point);
+		float d = glm::length(glm::cross(u, point));
+
+		if (d < innerCylinderRadiusMinus || innerCylinderRadiusMinus<0) innerCylinderRadiusMinus = d;
+	}
+}

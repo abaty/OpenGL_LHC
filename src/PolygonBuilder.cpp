@@ -67,8 +67,12 @@ std::vector< myPolygon > PolygonBuilder::tube2D(myPolygon poly1, float z1, myPol
 		glm::vec3 v3 = poly2.vtxs[j];
 		v3.z = z2;
 		p.push_back(v3);
-		if(!flipFaceOrientation) polygons.push_back(myPolygon(p, c));
-		else polygons.push_back(myPolygon(p, p[0]+(p[0]-c)));
+		if (flipFaceOrientation) {
+			polygons.push_back(myPolygon(p, c, true));
+		}
+		else {
+			polygons.push_back(myPolygon(p, c, false));
+		}
 	}
 	//same for poly2
 	for (size_t j = 0; j < poly2.vtxs.size(); j++) {
@@ -82,8 +86,12 @@ std::vector< myPolygon > PolygonBuilder::tube2D(myPolygon poly1, float z1, myPol
 		glm::vec3 v3 = poly1.vtxs[(j + 1 == poly1.vtxs.size()) ? 0 : j + 1];
 		v3.z = z1;
 		p.push_back(v3);
-		if (!flipFaceOrientation) polygons.push_back(myPolygon(p, c));
-		else polygons.push_back(myPolygon(p, p[0] + (p[0] - c)));
+		if (flipFaceOrientation) {
+			polygons.push_back(myPolygon(p, c, true));
+		}
+		else {
+			polygons.push_back(myPolygon(p, c, false));
+		}
 	}
 	return polygons;
 };

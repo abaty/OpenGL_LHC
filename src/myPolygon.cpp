@@ -1,13 +1,16 @@
 #include "include/Geometry/myPolygon.h"
 
 //assumes the points are given in a 'fan' configuration where they go Clockwise or CClockwise around the polygon
-myPolygon::myPolygon(std::vector< glm::vec3 > _vtxs, glm::vec3 interior) 
-	:vtxs(_vtxs)
+myPolygon::myPolygon(std::vector< glm::vec3 > _vtxs, glm::vec3 interior, bool flipNormal) 
+	:vtxs(_vtxs), isNormalFlipped(flipNormal)
 	{
 	if (vtxs.size() < 3) {
 		std::cout << "Polygon::Polygon needs at least 3 points!" << std::endl;
 		return;
 	}
+
+	//put the interior on the opposite side
+	if (flipNormal) interior = vtxs[0] + (vtxs[0] - interior);
 
 	sphereRadius = glm::distance(vtxs.at(0), vtxs.at(1))/2.0;
 	sphereCenter = 0.5f * (vtxs.at(0) + vtxs.at(1));

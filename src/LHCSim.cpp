@@ -114,19 +114,19 @@ int main(void)
 
 	beam.Start();
 
-	Box3D b = Box3D(0.0f,0.0f,0.0f,0.1f,3.0f,3.0f);
+	Box3D b = Box3D(0.0f,0.0f,1.0f,0.1f,3.0f,1.0f);
 	b.setMaterial(matEnum::BLACK_PLASTIC);
-	b.setRotZ(0.2);
+	b.setRotZ(-0.4);
 	Box3D b2 = Box3D(1.2f,1.2f,1.2f,0.1f,0.1f,0.1f);
 	Box3D b3 = Box3D(1.0f, 1.0f, 1.0f, 2.5f, 0.1f, 0.1f);
-	Box3D b4 = Box3D(0.3f, 0.0f, 0.0f, 0.01f, 0.1f, 0.1f);
+	Box3D b4 = Box3D(0.0f, 0.0f, 0.0f, 0.1f, 0.1f, 0.1f);
 	b4.setMaterial(matEnum::JADE);
 
 	PolygonBuilder pb = PolygonBuilder();
 	//Prism3D prism = Prism3D(pb.nGon(4,0.5), pb.nGon(4,-0.5), 2, -1.0, -1.0, -1.0, 0.3f, 0.6f, 2.0f);
 	//Prism3D prism = Prism3D(pb.nGon(100,0.5), pb.nGon(100, 0.5), 2, -1.0, -1.0, -1.0, 0.3f, 0.6f, 2.0f);
 	//Extrusion3D prism = Extrusion3D(pb.nGon(30,0.5,0.2), pb.nGon(30,-0.5,1.2), 5, 2, -1.0, -1.0, -1.0, 1.0f, 1.0f, 1.0f);
-	Tube3D prism = Tube3D(pb.nGon(30, 0.5, 0.8), pb.nGon(30, -0.5, 1.2), 1, 2, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.5f);
+	Tube3D prism = Tube3D(pb.nGon(30, 0.5, 0.5), pb.nGon(30, -0.5, 0.8), 1, 2, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.5f);
 
 	/* Loop until the user closes the window */
 	while (!glfwWindowShouldClose(window))
@@ -151,7 +151,8 @@ int main(void)
 		renderer.Clear();
 
 		b.setOffX((float)multiCamera.cameras.at(0).getDistanceFromCenterOfWorld()/4.0);
-		b4.setOffX((float)multiCamera.cameras.at(0).getDistanceFromCenterOfWorld() / 50.0);
+		b4.setOffY((float)multiCamera.cameras.at(0).getDistanceFromCenterOfWorld() / 15.0);
+		b4.setOffZ((float)multiCamera.cameras.at(0).getDistanceFromCenterOfWorld() / 15.0);
 
 		for (int i = 0; i < multiCamera.getNCameras(); i++) {
 			multiCamera.setViewport(false, i);
@@ -163,11 +164,13 @@ int main(void)
 
 			if (b.isInside(1.2,1.2,1.2) == 1) b.setMaterial(matEnum::RED_PLASTIC);
 			//else b.setMaterial(matEnum::BLACK_PLASTIC);
-			else if (b.isInside(&b3) ||b3.isInside(&b)) b.setMaterial(matEnum::RED_PLASTIC);
+			else if (b.isInside(&b3) || b3.isInside(&b)) b.setMaterial(matEnum::RED_PLASTIC);
 			else b.setMaterial(matEnum::BLACK_PLASTIC);
 			
 			if (prism.isInside(&b4)) b4.setMaterial(matEnum::CYAN_PLASTIC);
 			else b4.setMaterial(matEnum::BLACK_PLASTIC);
+			if (prism.isInside(0, (float)multiCamera.cameras.at(0).getDistanceFromCenterOfWorld() / 15.0 , (float)multiCamera.cameras.at(0).getDistanceFromCenterOfWorld() / 15.0)) prism.setMaterial(matEnum::RED_PLASTIC);
+			else prism.setMaterial(matEnum::OBSIDIAN);
 			b.Draw(&renderer, &boxShader);
 			b2.setUniforms(&boxShader);
 			b2.Draw(&renderer, &boxShader);

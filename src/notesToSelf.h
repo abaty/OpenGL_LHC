@@ -6,13 +6,15 @@ http://web.stanford.edu/class/cs277/resources/papers/Moller1997b.pdf
 
 
 Fix collision detector for different 3D objects, and then find a solution for tubes
-		First: Implement Axis-aligned bounding boxes (get rid of spheres)
-		Second: Implement method that checks point by point if 1 convex polyhedron is in another
+		First: Implement Axis-aligned bounding boxes (get rid of spheres) (OK)
+		Second: Implement method that checks point by point if 1 convex polyhedron is in another(OK)
+		Third: Do hollows by requiring Second + not inside hollow area? (OK)
 
-		WORKING ON OBJECT3DBASE L85ish
+		point and faster hollow behavior -> implement 'inside' AABB for model coordinates
 
-		Third: Do hollows by requiring Second + not inside hollow area?
 
+if collision detection takes too long, allow one to 'lock' an object (doesn't move) and then generate a vector of points in world coordinates rather than model)
+will probably save some matrix multiplications
 
 different types of pythia processes
 

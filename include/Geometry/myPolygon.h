@@ -5,7 +5,7 @@
 //class for a planar shape
 class myPolygon {
 public:
-	myPolygon(std::vector< glm::vec3 > _vtxs, glm::vec3 interior);
+	myPolygon(std::vector< glm::vec3 > _vtxs, glm::vec3 interior, bool flipNormal = false);
 	void addBuffer(std::vector< float > * buffer, bool withNormals = true);
 
 	std::vector< Triangle > polygonTriangles;
@@ -22,6 +22,8 @@ public:
 	//number of sides in this polygon (disregards repeated vertices)
 	int getNSides() { return nVertices; };
 
+	bool getIsNormalFlipped() { return isNormalFlipped; };
+
 private:
 	//stuff for collision detection
 	//define a sphere that contains all the points of the object
@@ -31,4 +33,6 @@ private:
 
 	unsigned int nVertices;
 	unsigned int nSides;
+
+	bool isNormalFlipped = false;
 };

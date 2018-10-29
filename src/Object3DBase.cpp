@@ -5,7 +5,7 @@ Object3DBase::Object3DBase(){
 	boxBufferLayout.Push<float>(3);//normals
 
 	//material
-	setMaterial(matEnum::RED_PLASTIC);
+	setMaterial(matEnum::OBSIDIAN);
 }
 
 bool Object3DBase::isInside(float x, float y, float z) {
@@ -17,12 +17,19 @@ bool Object3DBase::isInside(glm::vec3 v) {
 	//if it is not, then return false
 	if (!aabb.isInside(v)) return false;
 
+	if (isHollow && isInsideHollowRegion(v)) return false;
+
+
 	//if it is inside the AABB we need to be more careful:
 	//check to see if the vector from the point is along the normal of the polygon
-	//THIS ASSUMES A CONVEX POLYHEDRON
+	//THIS ASSUMES A CONVEX POLYHEDRON unless isHollow is specified, (see tube3d for example of that case)
+	glm::vec3 vPrime = inverseMatrix * glm::vec4(v, 1.0f);
 	for (size_t i = 0; i < polygons.size(); i++) {
+		//only take into account polygons with unflipped normals (for tubes and hollow stuff that have surfaces facing the center,
+		//we ignore inside surfaces)
+		if (polygons[i].getIsNormalFlipped()) continue;
+
 		//put the point into model coordinates
-		glm::vec3 vPrime = inverseMatrix * glm::vec4(v, 1.0f);
 		if (glm::dot(polygons[i].getNormal(), polygons[i].vtxs[0] - vPrime) < 0) return false;
 	}
 	return true;
@@ -33,158 +40,134 @@ bool Object3DBase::isInside(Object3DBase *obj) {
 	//if it is not, then return false
 	if (!this->aabb.isInside(obj->aabb)) return false;
 
-	struct C_R_I {
-		glm::vec3 center;
-		glm::vec3 normal;
-		float r;
-		size_t index;
-	};
-
-	std::vector< C_R_I > objPolys;
-
-	for (size_t a = 0; a < obj->polygons.size(); a++) {
-		myPolygon p = obj->polygons[a];
-		glm::vec3 center = obj->getTransformationMatrix() * glm::vec4( p.getCollisionSphereCenter(), 1.0f);
-		float r = p.getCollisionSphereRadius();
-		glm::vec3 n = glm::normalize(obj->getNormalMatrix() * glm::vec4(p.getNormal(), 1.0f));
-
-		//scale collision radius to the radius it should be in world coordinates (calculates 
-		float xFactor = (1-fabs(n.x))*obj->getDimX();
-		float yFactor = (1-fabs(n.y))*obj->getDimY();
-		float zFactor = (1-fabs(n.z))*obj->getDimZ();
-		float scaleFactor = glm::length(glm::vec3(xFactor, yFactor, zFactor));
-		r *= scaleFactor;
-
-		C_R_I temp = { center, n, r, a };
-		objPolys.push_back(temp);
-	}
-
-	std::vector< C_R_I > thisPolys;
-	for (size_t a = 0; a < polygons.size(); a++) {
-		myPolygon p = polygons[a];
-		glm::vec3 center = getTransformationMatrix() * glm::vec4(p.getCollisionSphereCenter(), 1.0f);
-		float r = p.getCollisionSphereRadius();
-		glm::vec3 n = glm::normalize(getNormalMatrix() * glm::vec4(p.getNormal(), 1.0f));
-
-		//scale collision radius to the radius it should be in world coordinates (calculates 
-		float xFactor = (1 - fabs(n.x))*getDimX();
-		float yFactor = (1 - fabs(n.y))*getDimY();
-		float zFactor = (1 - fabs(n.z))*getDimZ();
-		float scaleFactor = glm::length(glm::vec3(xFactor, yFactor, zFactor));
-		r *= scaleFactor;
-
-		C_R_I temp = { center, n, r, a };
-		thisPolys.push_back(temp);
-	}
-
-	for (size_t i = 0; i < objPolys.size(); i++) {
-		for (size_t j = 0; j < thisPolys.size(); j++) {
-			glm::vec3 diff = objPolys[i].center - thisPolys[j].center;
-			float radius = (1 - fabs(glm::dot(diff, objPolys[i].normal)*objPolys[i].r)) +
-				(1 - fabs(glm::dot(diff, thisPolys[j].normal)*thisPolys[j].r));
-			if ( glm::length(diff) > radius) continue;
-
-			//check individual polygons here
-
-		}
-	}
-
-	//if it is inside the AABB we need to be more careful:
-	//check to see if the vector from the point is along the normal of the polygon
-	//THIS ASSUMES THIS THE CALLING OBJECT (THIS->) IS A CONVEX POLYHEDRON
-
-	//loop over all vertices in the polygons of *obj and check if each of those points is in (this->)
-	/*for (size_t a = 0; a < obj->polygons.size(); a++) {
-		for (size_t b = 0; b < obj->polygons[a].vtxs.size(); b++) {
-			glm::vec3 v = obj->polygons[a].vtxs[b];
-
-			for (size_t i = 0; i < polygons.size(); i++) {
-				//put the point into model coordinates
-				glm::vec3 vPrime = inverseMatrix * glm::vec4(v, 1.0f);
-				if (glm::dot(polygons[i].getNormal(), polygons[i].vtxs[0] - vPrime) < 0) return false;
-			}
-		}
-	}*/
-
-	return true;
-}
-
-/*
-int Object3DBase::isInside(float x, float y, float z, float R, std::vector< myPolygon >* polys, glm::mat4 preTransform) {
-	return isInside(glm::vec3(x, y, z), R, polys, preTransform);
-}
-
-//checks if any part of a sphere of radius R is inside the sphere containing the object
-//R=0 corresponds to checking if a point is inside the sphere containing the object
-//if one supplies a preTransform matrix, the points in the points vector are transformed by that first before checking
-//this allows one to supply points in model coordinates of 1 model, transform to world coordinates and back to model coordinates of object 2, where checking overlaps is easy
-
-//returns 0 if not inside, 1 if IS inside, -1 is undecided
-int Object3DBase::isInside(glm::vec3 v, float R, std::vector< myPolygon >* polys, glm::mat4 preTransform) {
-	//do quick check with sphere radius before doing matrix transform
-	//can only determine if the two bounding spheres don't touch
-	if (glm::distance(v, sphereCenter) > sphereRadius + R) return 0;
-
-	if(isHollow && isInsideHollow(v, R, polys, preTransform)) return 0;
-
-	//do a more indepth check of the point given
-	glm::vec3 transformedV = getInverseMatrix()*glm::vec4(v, 1.0);
-	if (insideBounds(transformedV)) {
-		if (fabs(R) < 0.00001f) return 1;//if we were just checking the point, it is not inside, othersise we are still not sure
-	}
-
-	//if we got a list of polygons, check all those rigorously
-	//this either returns 1 or 0 because it checks everything
-	if (polys != NULL) {
-		glm::mat4 netTransform = getInverseMatrix()*preTransform;
-		//loop over polygons
-		for (size_t i = 0; i < polys->size(); ++i) {
-			myPolygon poly = polys->at(i);
-
-			//quick check at polygon level before checking all triangles
-			if (glm::distance(poly.getCollisionSphereCenter(), sphereCenter) > sphereRadius + poly.getScaledCollisionSphereRadius(sphereCenter)) continue;
-			for (size_t j = 0; j < poly.vtxs.size(); j++) {
-				glm::vec3 transformedV = netTransform*glm::vec4(poly.vtxs[j], 1.0);
-				if (insideBounds(transformedV)) return 1;
-			}
-		}
-		return 0;
-	}
-	//finished with rigorous check
-
-	return -1;
-}
-
-bool Object3DBase::insideBounds(glm::vec3 v) {
+	//check if polygons are in the same plane
+    //following http://web.stanford.edu/class/cs277/resources/papers/Moller1997b.pdf
 	for (size_t i = 0; i < polygons.size(); i++) {
-		if (glm::dot(polygons[i].getNormal(), polygons[i].vtxs[0] - v) < 0) return false;
-	}
-	return true;
-}
+		//put the point into model coordinates
+		//step 1 in paper
+		glm::vec3 polyPoint = transformationMatrix * glm::vec4(polygons[i].vtxs[0],1.0);
+		glm::vec3 polyNorm = normalMatrix * polygons[i].getNormal();
+		float d2 = -glm::dot(polyNorm, polyPoint);
+		
+		//loop over other points on the polygons
+		//step 2 in paper
+		for (size_t j = 0; j < obj->polygons.size(); j++) {
+			bool areOnPlusSide = false;
+			bool areOnMinusSide = false;
+			std::vector< float > distancesObjPoly;
+			std::vector< glm::vec3 > polyPointObj;
+			for (size_t k = 0; k < obj->polygons[j].vtxs.size(); k++) {
+				polyPointObj.push_back( glm::vec3(obj->transformationMatrix * glm::vec4(obj->polygons[j].vtxs[k], 1.0)));
+				float dist = glm::dot(polyNorm, polyPointObj[k]) + d2;
+				distancesObjPoly.push_back(dist);
+				bool isPositive = ( dist >= 0) ? true : false ;
 
-//to be overridden in other classes
-bool Object3DBase::isInsideHollow(glm::vec3 v, float R, std::vector< myPolygon >* polys, glm::mat4 preTransform) {
+				if (isPositive) areOnPlusSide = true;
+				else areOnMinusSide = true;
+			}
+
+			//after loop, if all on same side then we continue
+			if (!(areOnPlusSide && areOnMinusSide)) continue;
+
+			//repeat same procedure as above but using plane of 2nd polygon and checking points of first polygon
+			//step 3 in paper
+			glm::vec3 poly2Point = obj->transformationMatrix * glm::vec4(obj->polygons[j].vtxs[0], 1.0);
+			glm::vec3 poly2Norm = obj->normalMatrix * obj->polygons[j].getNormal();
+			float d2_2 = -glm::dot(poly2Norm, poly2Point);
+
+			//step 4 in paper
+			//looping over points in polygon i now
+			areOnPlusSide = false;
+			areOnMinusSide = false;
+			std::vector< float > distancesThisPoly;
+			std::vector< glm::vec3 > polyPointThis;
+			for (size_t k = 0; k < polygons[i].vtxs.size(); k++) {
+				polyPointThis.push_back( glm::vec3( transformationMatrix * glm::vec4(polygons[i].vtxs[k], 1.0)));
+				float dist = glm::dot(poly2Norm, polyPointThis[k]) + d2_2;
+				distancesThisPoly.push_back(dist);
+				bool isPositive = ( dist >= 0) ? true : false;
+
+				if (isPositive) areOnPlusSide = true;
+				else areOnMinusSide = true;
+			}
+			//after loop, if all on same side then we continue
+			if (!(areOnPlusSide && areOnMinusSide)) continue;
+
+			//std::cout << "We got to here for " << i << " " << j << std::endl;
+
+			//if we get to here, then polygons i and j have a line that is in both of their planes
+			//we need to check if their projection onto this line overlaps
+			
+			//step 5 in paper
+			glm::vec3 projectionLine = glm::cross(polyNorm, poly2Norm);
+			//choose an axis to project onto (optimization in paper)
+			//a=0:x a=1:y a=0:z
+			unsigned char a = 0;
+			if (fabs(projectionLine.y) > fabs(projectionLine.x) && fabs(projectionLine.y) > fabs(projectionLine.z)) a = 1;
+			if (fabs(projectionLine.z) > fabs(projectionLine.x) && fabs(projectionLine.z) > fabs(projectionLine.y)) a = 2;
+
+			//step 6 (calculate interval for this polygon)
+			bool foundIntervalAlready = false;
+			float t1Min = 0;
+			float t1Max = 0;
+			for (size_t k = 0; k < polygons[i].vtxs.size(); k++) {
+				size_t nextIndex = (k == polygons[i].vtxs.size() - 1) ? 0 : k + 1;//wrap around if needed
+
+				//if they have the same sign as the next point (doesn't cross intersection), continue
+				if (distancesThisPoly[k] * distancesThisPoly[nextIndex] >= 0) continue;
+
+				float distRatio = distancesThisPoly[k]/(distancesThisPoly[k] - distancesThisPoly[nextIndex]);
+				float t = polyPointThis[k][a] + (polyPointThis[nextIndex][a] - polyPointThis[k][a]) * distRatio;
+
+				if (!foundIntervalAlready) {
+					t1Min = t;
+					t1Max = t;
+					foundIntervalAlready = true;
+				}
+				else {
+					if (t < t1Min)  t1Min = t;
+					else if (t >= t1Max)  t1Max = t;
+					break;
+				}
+			}
+
+			//calculate interval for 2nd polygon
+			foundIntervalAlready = false;
+			float t2Min = 0;
+			float t2Max = 0;
+			for (size_t k = 0; k < obj->polygons[j].vtxs.size(); k++) {
+				size_t nextIndex = (k == obj->polygons[j].vtxs.size() - 1) ? 0 : k + 1;//wrap around if needed
+
+				//if they have the same sign as the next point (doesn't cross intersection), continue
+				if (distancesObjPoly[k] * distancesObjPoly[nextIndex] >= 0) continue;
+
+				float distRatio = distancesObjPoly[k] / (distancesObjPoly[k] - distancesObjPoly[nextIndex]);
+				float t = polyPointObj[k][a] + (polyPointObj[nextIndex][a] - polyPointObj[k][a]) * distRatio;
+
+				if (!foundIntervalAlready) {
+					t2Min = t;
+					t2Max = t;
+					foundIntervalAlready = true;
+				}
+				else {
+					if (t < t2Min)  t2Min = t;
+					else if (t >= t2Max)  t2Max = t;
+					break;
+				}
+			}
+
+			//step 7, check if the intervals intersect
+			//if they do, we have an intersection
+			bool noIntersect = (t2Max <= t1Min) || (t2Min >= t1Max);
+			if (!noIntersect) return true;
+		}
+	}
 	return false;
 }
 
-void Object3DBase::updateSphereCenter() {
-	sphereCenter = glm::vec3(offset[0], offset[1], offset[2]);
+bool Object3DBase::isInsideHollowRegion(glm::vec3 v) {
+	return false;
 }
-
-void Object3DBase::updateSphereRadius() {
-	float R = 0;
-
-	for (size_t i = 0; i < polygons.size(); ++i) {
-		myPolygon poly = polygons.at(i);
-		for (size_t j = 0; j < poly.vtxs.size(); j++) {
-			float newR = glm::length(poly.vtxs[j]);
-			if (newR > R) R = newR;
-		}
-	}
-	sphereRadius = R;
-}
-
-*/
 
 void Object3DBase::updateAABB() {
 	for (size_t i = 0; i < polygons.size(); ++i) {

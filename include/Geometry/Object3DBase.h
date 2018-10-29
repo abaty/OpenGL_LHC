@@ -17,8 +17,7 @@
 //base class for 3d objects
 //things can be overwritten in specific classes by making functions virtual as needed
 
-//recommended to overwrite the virtual functions updateSphereRadius() and insideBounds() and constructor as 
-//needed (default ones should work but will be slow)
+//if you are not dealing with convex polyhedra, isInside() might have to be modified in particular
 
 class Object3DBase {
 	public:
@@ -34,18 +33,9 @@ class Object3DBase {
 		bool isInside(glm::vec3 v);
 		bool isInside(Object3DBase *obj);
 
-		/*int isInside(float x, float y, float z, float R = 0, std::vector< myPolygon >* polys = NULL, glm::mat4 preTransform = glm::mat4(1.0));
-		int isInside(glm::vec3 v, float R = 0, std::vector< myPolygon >* polys = NULL, glm::mat4 preTransform = glm::mat4(1.0));
-		//helper function that checks if a point is inside the object based on it's polygons and their normals
-		virtual bool insideBounds(glm::vec3);
-		float getCollisionSphereRadius() { return sphereRadius; };
-		glm::vec3 getCollisionSphereCenter() { return sphereCenter; };
-		void setSphereCenter(glm::vec3 center) { sphereCenter = center; };
-		void setSphereRadius(float r) { sphereRadius = r; };*/
-
 		//stuff for hollow objects (tubes, etc)
 		bool isHollow = false;
-		//virtual bool isInsideHollow(glm::vec3 v, float R, std::vector< myPolygon >* polys, glm::mat4 preTransform);
+		virtual bool isInsideHollowRegion(glm::vec3 v);
 
 		//functions for setting dimensions
 		void setDimX(float f);
@@ -81,7 +71,7 @@ class Object3DBase {
 		glm::mat4 getRotationMatrix() { return rotationMatrix; };
 
 		//other matrices
-		glm::mat3 getTransformationMatrix() { return transformationMatrix;  };
+		glm::mat4 getTransformationMatrix() { return transformationMatrix;  };
 		glm::mat4 getNormalMatrix() { return normalMatrix; };
 		glm::mat4 getInverseMatrix() { return inverseMatrix; };
 
@@ -132,13 +122,6 @@ class Object3DBase {
 
 		glm::mat4 transformationMatrix;
 		void updateTransformationMatrix();
-
-		//stuff for collision detection
-		//define a sphere that contains all the points of the object
-		/*glm::vec3 sphereCenter;
-		float sphereRadius;
-		virtual void updateSphereRadius();
-		virtual void updateSphereCenter();*/
 
 		//material
 		Material boxMaterial;
