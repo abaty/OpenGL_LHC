@@ -1,5 +1,5 @@
 #pragma once
-#pragma once
+
 #include "glm/glm.hpp"
 #include "include/Geometry/AABB.h"
 #include "include/Geometry/Materials.h"

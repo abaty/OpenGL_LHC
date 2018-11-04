@@ -8,10 +8,11 @@
 #define TURN_OFF_MULTITHREADING 0 //0 = multithreading turned on, 1 = no multithreading
 
 
-MyEvent::MyEvent(double _animationTime, double _fadeStartTime, Beam* _beam, MCGenerator* _mcGen)
+MyEvent::MyEvent(double _animationTime, double _fadeStartTime, Beam* _beam, MCGenerator* _mcGen, BFieldMap * _BField)
 {
 	thisMCGenerator = _mcGen;
 	beamline = _beam;
+	BField = _BField;
 	trackLengthModifier = beamline->GetSecondsToNSConversion();
 	delayTime = beamline->GetBunchCrossingDelay() / beamline->GetSecondsToNSConversion();
 	refreshTime = ( beamline->GetBunchSpacing() )/beamline->GetSecondsToNSConversion() - delayTime;
@@ -255,7 +256,6 @@ void MyEvent::RunSimulation(int threadID, int nThreads, float minT, float bunchL
 	lengthScale[generatorIndex] = (float) (maxSizeOfSignedShort / (nTimeIntervals*timeStep*SPEED_OF_LIGHT_M_PER_NS + 3 * SQRT2*bunchLength / 100.0));
 
 	short * tempPositions = (short*) malloc(nTimeIntervals * sizeof(short) * SHORTS_IN_VTX_BUFFER);
-	glm::vec3 B = glm::vec3(3.8f, 0.0f, 0.0f);
 
 	for (unsigned int i = 0; i < tracks[generatorIndex].size(); i++) {
 		if (i % nThreads != threadID) continue;//have the nth thread do the nth track in a cycle...
@@ -281,6 +281,9 @@ void MyEvent::RunSimulation(int threadID, int nThreads, float minT, float bunchL
 		//relativistic particle in B field is same as non-relativistic w/ mass term replaced by gamma*mass (energy)
 		for (unsigned short j = 0; j < nTimeIntervals; j++) {
 			//if (i>10 && j > 180) continue;  //can terminate tracks early here with a continue
+
+			//figure out what the B field is here
+			glm::vec3 B = BField->getBField(trkX);
 
 			//write down positions
 			for (int k = 0; k < 3; k++)  tempPositions[j*SHORTS_IN_VTX_BUFFER + k] = (short)(trkX[k] * lengthScale[generatorIndex]);

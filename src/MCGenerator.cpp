@@ -91,17 +91,17 @@ void MCGenerator::InitializePythia8() {
 		thisPythia->readString("Random:seed = 0");
 
 		//e+e-
-		//thisPythia->readString("Beams:idA = 11");
-		//thisPythia->readString("Beams:idB = -11");
-		//thisPythia->readString("Beams:eCM = 91.");
-		//thisPythia->readString("WeakSingleBoson:all = on");
+		thisPythia->readString("Beams:idA = 11");
+		thisPythia->readString("Beams:idB = -11");
+		thisPythia->readString("Beams:eCM = 91.");
+		thisPythia->readString("WeakSingleBoson:all = on");
 		//thisPythia->readString("WeakDoubleBoson:all = on");
 		
 		//pp
-		thisPythia->readString("Beams:eCM = 13000.");
+		//thisPythia->readString("Beams:eCM = 13000.");
 		//thisPythia->readString("PartonLevel:MPI = off");
-		thisPythia->readString("PartonLevel:MPI = on");
-		thisPythia->readString("SoftQCD:inelastic = on");
+		//thisPythia->readString("PartonLevel:MPI = on");
+		//thisPythia->readString("SoftQCD:inelastic = on");
 		//thisPythia->readString("SoftQCD:nondiffractive = on");
 		//thisPythia->readString("HardQCD:all = on");
 		//thisPythia->readString("PhaseSpace:pTHatMin = 4000.");

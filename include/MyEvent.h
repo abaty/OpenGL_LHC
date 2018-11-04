@@ -7,6 +7,7 @@
 #include "include/Renderer.h"
 #include "include/shader.h"
 #include "include/Beam.h"
+#include "include/BFieldMap.h"
 #include "include/MCGenerator.h"
 #include "include/Timer.h"
 #include "glm/glm.hpp"
@@ -21,7 +22,7 @@
 
 class MyEvent {
 public:
-	MyEvent(double _animationTime, double _fadeTime, Beam* _beam, MCGenerator* _mcGen);
+	MyEvent(double _animationTime, double _fadeTime, Beam* _beam, MCGenerator* _mcGen, BFieldMap* _BField);
 	~MyEvent();
 
 	int Update();//return 1 if a new event was created
@@ -67,6 +68,7 @@ public:
 private:
 	Beam *beamline;
 	MCGenerator *thisMCGenerator;
+	BFieldMap *BField;
 
 	double startTime;//time the event was started rendering
 	double delayTime;//number of seconds to wait before displaying a new event

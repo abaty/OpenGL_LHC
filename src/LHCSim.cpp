@@ -24,6 +24,8 @@
 #include "include/MultiCamera.h"
 #include "include/MyEvent.h"
 #include "include/Beam.h"
+#include "include/Solenoid.h"
+#include "include/BFieldMap.h"
 
 //NOTE that these lines switch from integrated graphics to NVIDIA graphics card
 //undesirable because it breaks multi-platform compatibility (needs <windows.h>)
@@ -97,15 +99,20 @@ int main(void)
 	Shader fontShader("resources/shaders/fontShader.shader");
 
 	float secondToNSConversion = 1.0f;//can think of this as an overall scale factor
-	Beam beam = Beam("LHC", 0.1f, secondToNSConversion);
+	Beam beam = Beam("LEP", 0.1f, secondToNSConversion);
 	//beam.SetIsFixedTarget(1);
 	beam.SetNPipes(2);
 	//beam.SetIsPoissonPU(false);
 	beam.SetPileup(2);
 	MCGenerator mcGen = MCGenerator(generatorType::PYTHIA8);
 	//MCGenerator mcGen = MCGenerator(generatorType::ISOTROPIC);
+	BFieldMap bMap = BFieldMap();
+	Solenoid sol = Solenoid(10, 22e6, 1, 2.0, 2.5, glm::vec3(1.0, 0.0, 0), glm::vec3(0,0,0));
+	Solenoid sol2 = Solenoid(10, 42e6, 1, 0.8, 1.0, glm::vec3(-1.0f, 0.0f,0), glm::vec3(0,0,0));
+	bMap.addMagnet(&sol);
+	bMap.addMagnet(&sol2);
 
-	MyEvent event = MyEvent(0.76, 0.96, &beam, &mcGen);
+	MyEvent event = MyEvent(0.76, 0.96, &beam, &mcGen, &bMap);
 	//event.EnablePtCut(1.0f);
 	event.EnableEtaCut(1.5f);
 
