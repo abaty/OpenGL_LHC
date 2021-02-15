@@ -17,6 +17,7 @@ Font::Font(int screenWidth, int screenHeight, int _fontHeight, std::string font)
 
 	//Sets the size (fontHeight pixels high, width dynamically calculated)
 	FT_Set_Pixel_Sizes(face, 0, fontHeight);
+	/*
 
 	GLCall(glPixelStorei(GL_UNPACK_ALIGNMENT, 1)); // Disable byte-alignment restriction
 
@@ -75,6 +76,7 @@ Font::Font(int screenWidth, int screenHeight, int _fontHeight, std::string font)
 	GLCall(glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), 0));
 	GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));
 	GLCall(glBindVertexArray(0));
+	*/
 }
 
 void Font::UpdateScreenSize(int screenWidth, int screenHeight) {

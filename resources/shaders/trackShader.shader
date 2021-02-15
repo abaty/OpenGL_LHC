@@ -48,7 +48,7 @@ void main() {
 	else if (PID - 2212 < 0.01f)   inputColor = u_ColorProton;
 	else				        inputColor = u_ColorDefault;
 	inputColor[3] = alpha;
-};
+}
 
 #shader fragment
 #version 330 core
@@ -58,4 +58,4 @@ in vec4 inputColor;
 
 void main() {
 	color = inputColor;
-};
+}

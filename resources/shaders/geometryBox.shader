@@ -15,7 +15,7 @@ void main() {
 	gl_Position = u_ProjView*u_Translate*u_Rotation*u_Scale*position;
 	fragPosition = vec3(u_Translate*u_Rotation*u_Scale*position);
 	normal = normalize(u_NormalMatrix*inNormals);
-};
+}
 
 #shader fragment
 #version 330 core
@@ -70,4 +70,4 @@ void main() {
 	vec3 specular = specLight * u_material.specular;
 
 	color = vec4(ambient+diffuse+specular, 1.0f);
-};
+}

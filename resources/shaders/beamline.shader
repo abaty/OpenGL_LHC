@@ -42,7 +42,7 @@ void main() {
 
 	outColor.xyz = gaussianValue * u_BunchColor.xyz + (1-gaussianValue) * u_PipeColor.xyz + 0.2*gaussianValue;
 	outColor[3] = alphaModifier;
-};
+}
 
 #shader fragment
 #version 330 core
@@ -52,4 +52,4 @@ in vec4 outColor;
 
 void main() {
 	color = outColor;
-};
+}
