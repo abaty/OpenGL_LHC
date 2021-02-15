@@ -1,13 +1,14 @@
 #pragma once
 #include <GL/glew.h>
+#include <signal.h>
 #include "include/GlobalSettings.h"
 #include "include/VertexArray.h"
 #include "include/IndexBuffer.h"
 #include "include/shader.h"
-#include "include/camera.h"
+#include "include/Camera.h" // need to be confimed from Austin
 
 //Visual studio specific stuff, might be bad for working with other compilers
-#define ASSERT(x) if (!(x)) __debugbreak();
+#define ASSERT(x) if (!(x)) raise(SIGTRAP);
 #define GLCall(x) GLClearError();\
 	x;\
 	ASSERT(GLLogCall(#x, __FILE__, __LINE__))

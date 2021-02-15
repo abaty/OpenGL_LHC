@@ -1,5 +1,5 @@
 #pragma once
-#include "Pythia8\Pythia.h"
+#include "Pythia8/Pythia.h"
 #include <include/Track.h>
 #include <string>
 #include <vector>

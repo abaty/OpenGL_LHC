@@ -1,5 +1,4 @@
 #include <iostream>
-#include <iostream>
 #include <fstream>
 #include <string>
 #include <sstream>
@@ -30,11 +29,11 @@
 //NOTE that these lines switch from integrated graphics to NVIDIA graphics card
 //undesirable because it breaks multi-platform compatibility (needs <windows.h>)
 //not sure if there is a better solution at this point in time...
-#include <windows.h>
+//#include <windows.h>
 
-extern "C" {
-	_declspec(dllexport) DWORD NvOptimusEnablement = 0x00000001;
-}
+//extern "C" {
+//	_declspec(dllexport) DWORD NvOptimusEnablement = 0x00000001;
+//}
 //end of above note
 
 GlobalSettings settings = GlobalSettings();
@@ -47,6 +46,8 @@ int main(void)
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
 	/* Create a windowed mode window and its OpenGL context */
 	int aspectRatioX = 1280;
@@ -55,6 +56,7 @@ int main(void)
 
 	GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
 	const GLFWvidmode* mode = glfwGetVideoMode(primaryMonitor);
+	glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
 	glfwWindowHint(GLFW_RED_BITS, mode->redBits);
 	glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
 	glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
@@ -112,6 +114,7 @@ int main(void)
 	bMap.addMagnet(&sol);
 	bMap.addMagnet(&sol2);
 
+	std::cin.get();
 	MyEvent event = MyEvent(0.76, 0.96, &beam, &mcGen, &bMap);
 	//event.EnablePtCut(1.0f);
 	event.EnableEtaCut(1.5f);

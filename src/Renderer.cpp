@@ -92,7 +92,7 @@ void Renderer::MultiDraw(const VertexArray& va, const IndexBuffer& ib, const Sha
 	shader.Bind();
 	va.Bind();
 	ib.Bind();
-	GLCall(glMultiDrawElements(mode, counts, GL_UNSIGNED_INT, (GLvoid**)offsets, (GLsizei)nPrimitives));
+	GLCall(glMultiDrawElements(mode, counts, GL_UNSIGNED_INT, (const GLvoid**)offsets, (GLsizei)nPrimitives));
 }
 
 void Renderer::DrawNoIB(const VertexArray& va, const Shader& shader, GLenum mode, unsigned int count) const {

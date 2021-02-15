@@ -1,4 +1,4 @@
-#include "include\Solenoid.h"
+#include "include/Solenoid.h"
 
 //
 //digits 10 specifies how many digits precision
