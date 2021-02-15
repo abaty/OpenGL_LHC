@@ -1,6 +1,7 @@
 #pragma once
 #include "glm/glm.hpp"
 #include "include/Solenoid.h"
+#include <thread>
 #include <vector>
 #include <mutex>
 

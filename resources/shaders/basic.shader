@@ -8,7 +8,7 @@ uniform mat4 u_Rotation;
 void main(){
     gl_Position =  u_Rotation*position;
 	z = position.z;
-};
+}
 
 #shader fragment
 #version 330 core
@@ -20,4 +20,4 @@ in float z;
 void main(){
     color = u_Color;
 	color.r = 4*z*z;
-};
+}

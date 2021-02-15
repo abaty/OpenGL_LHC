@@ -1,5 +1,4 @@
 #include <iostream>
-#include <iostream>
 #include <fstream>
 #include <string>
 #include <sstream>
@@ -30,11 +29,11 @@
 //NOTE that these lines switch from integrated graphics to NVIDIA graphics card
 //undesirable because it breaks multi-platform compatibility (needs <windows.h>)
 //not sure if there is a better solution at this point in time...
-#include <windows.h>
+//#include <windows.h>
 
-extern "C" {
-	_declspec(dllexport) DWORD NvOptimusEnablement = 0x00000001;
-}
+//extern "C" {
+//	_declspec(dllexport) DWORD NvOptimusEnablement = 0x00000001;
+//}
 //end of above note
 
 GlobalSettings settings = GlobalSettings();
@@ -47,6 +46,8 @@ int main(void)
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
 	/* Create a windowed mode window and its OpenGL context */
 	int aspectRatioX = 1280;
@@ -55,6 +56,7 @@ int main(void)
 
 	GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
 	const GLFWvidmode* mode = glfwGetVideoMode(primaryMonitor);
+	glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
 	glfwWindowHint(GLFW_RED_BITS, mode->redBits);
 	glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
 	glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
@@ -70,33 +72,31 @@ int main(void)
 		glfwTerminate();
 		return -1;
 	}
-
+	
 	/* Make the window's context current */
 	glfwMakeContextCurrent(window);
 	glfwSwapInterval(1);
-
+	glewExperimental = GL_TRUE;
 	if (glewInit() != GLEW_OK)
 		std::cout << "Error in GLEW initialization!" << std::endl;
 	std::cout << glGetString(GL_VENDOR) << std::endl;
 	std::cout << glGetString(GL_RENDERER) << std::endl;
 	std::cout << glGetString(GL_VERSION) << std::endl;
 	std::cout << "Number of threads supported: " << std::thread::hardware_concurrency() << std::endl;
-
 	MultiCamera multiCamera = MultiCamera(aspectRatioX, aspectRatioY, glm::vec3(3.0f, 1.0f, 1.0f));
 	//multiCamera.setViewMode(viewMode::ONE_SCREEN);
 	//multiCamera.setViewMode(viewMode::FOUR_CORNERS);
 	//multiCamera.setViewMode(viewMode::ONE_LEFT_TWO_SQUARES_RIGHT);
 	//multiCamera.setViewMode(viewMode::ONE_LEFT_TWO_SQUARES_RIGHT_BOTTOMLEFTSPLIT);
 	multiCamera.setViewMode(viewMode::ONE_LEFT_TWO_SQUARES_RIGHT_BOTTOMLEFTSPLIT_ZOOM);
-
-	Font arial = Font(aspectRatioX, aspectRatioY, aspectRatioY/60.0);
+	//Font arial = Font(aspectRatioX, aspectRatioY, aspectRatioY/60.0);
 	Renderer renderer(true, true);
 
-	Shader boxShader("resources/shaders/geometryBox.shader");
-	Shader trkShader("resources/shaders/trackShader.shader");
-	Shader beamlineShader("resources/shaders/beamline.shader");
-	Shader frameBorderShader("resources/shaders/frameBorder.shader");
-	Shader fontShader("resources/shaders/fontShader.shader");
+	Shader boxShader("../resources/shaders/geometryBox.shader");
+	Shader trkShader("../resources/shaders/trackShader.shader");
+	Shader beamlineShader("../resources/shaders/beamline.shader");
+	Shader frameBorderShader("../resources/shaders/frameBorder.shader");
+//	Shader fontShader("../resources/shaders/fontShader.shader");
 
 	float secondToNSConversion = 1.0f;//can think of this as an overall scale factor
 	Beam beam = Beam("LEP", 0.1f, secondToNSConversion);
@@ -136,6 +136,7 @@ int main(void)
 	Tube3D prism = Tube3D(pb.nGon(30, 0.5, 0.5), pb.nGon(30, -0.5, 0.8), 1, 2, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.5f);
 
 	/* Loop until the user closes the window */
+	int kk = 0;
 	while (!glfwWindowShouldClose(window))
 	{
 		//stuff that is done before actually rendering
@@ -153,7 +154,7 @@ int main(void)
 			viewportSwaps++;
 		}*/
 		event.Update();
-
+		std::cout<<"Event: "<<kk<<" --------------------- "<<std::endl;
 		/* Render here */
 		renderer.Clear();
 
@@ -204,7 +205,7 @@ int main(void)
 			//draw any frame borders if needed
 			multiCamera.DrawBorders(&renderer, &frameBorderShader, i);
 		}
-
+/*
 		if (settings.doFPS) {
 			multiCamera.setViewport(true, 0);
 			glm::vec3 fontColor = glm::vec3(0.5f, 0.5f, 0.5f);
@@ -212,7 +213,7 @@ int main(void)
 			int decimalPlace = fps.find(".");
 			arial.RenderText(&fontShader, fps.substr(0,decimalPlace) , aspectRatioX*0.955f, aspectRatioY-arial.getFontHeight()*1.1f, 1.0f ,fontColor);
 		}
-
+*/
 		GLCall(glfwSwapBuffers(window)); 		/* Swap front and back buffers */
 		GLCall(glfwPollEvents());			/* Poll for and process events */
 	}

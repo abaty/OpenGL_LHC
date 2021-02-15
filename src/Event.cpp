@@ -159,7 +159,8 @@ void Event::FillEventBuffer(int rngSeed) {
 
 		float pMag = UniformRandom(0.3f, 3.0f);
 		float phi = UniformRandom(0.0f, 2 * PI);
-		Track t = Track(UniformRandom(-1,1), pMag*sin(phi) , pMag*cos(phi), -1 + 2 * (rand() % 2), mass);
+		Track t = Track(UniformRandom(-1,1), pMag*sin(phi) , pMag*cos(phi), -1 + 2 * (rand() % 2), mass , 0, 0,0);
+		//Track t = Track(UniformRandom(-1,1), pMag*sin(phi) , pMag*cos(phi), -1 + 2 * (rand() % 2), mass );
 		std::vector< float > tempPositions;
 
 		glm::vec3 trkX = glm::vec3();
